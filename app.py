@@ -23,6 +23,7 @@ READ_TOKEN = "READ_TOKEN"
 WRITE_TOKEN = "WRITE_TOKEN"
 
 
+########################################## strava request  ################################"
 # authenticate the user and return a read or write token api
 def authenticate(op_type):
     token = None
@@ -121,14 +122,22 @@ def get_summary_activities(r_token: dict, page_number: int, after: int = None) -
     return r.json()
 
 
-def check_valid_env_file(path_to_file):
-    with  open(path_to_file, 'r') as file_content:
-        contents = file_content.read()
-        if not contents.endswith("\n"):
-            print(path_to_file + " file must end with an empty line.")
-            exit(1)
+def get_details_activity(r_token: dict, activity_id: str) -> ({}, str, str):
+    url = "https://www.strava.com/api/v3/activities/" + activity_id
+    access_token = r_token['access_token']
+    r = requests.get(url + '?access_token=' + access_token + '&per_page=1' + '&page=1')
+    X_RateLimit_Usage = None
+    if r.headers.get('X-RateLimit-Usage') is not None:
+        X_RateLimit_Usage = r.headers.get('X-RateLimit-Usage')
+    X_RateLimit_Limit = None
+    if r.headers.get('X-RateLimit-Limit') is not None:
+        X_RateLimit_Limit = r.headers.get('X-RateLimit-Limit')
+    if r.status_code < 200 or r.status_code > 300:
+        return {"error": r.content}, X_RateLimit_Usage, X_RateLimit_Limit
+    return json.loads(r.content), X_RateLimit_Usage, X_RateLimit_Limit
 
 
+################################### mongo ####################################################################
 def insert_activities_to_mongo(activities: List[Dict], collection) -> List:
     try:
         for act in activities:
@@ -169,20 +178,7 @@ def get_average_speed_from_mongo(collection):
     return res
 
 
-def get_details_activity(r_token: dict, activity_id: str) -> ({}, str, str):
-    url = "https://www.strava.com/api/v3/activities/" + activity_id
-    access_token = r_token['access_token']
-    r = requests.get(url + '?access_token=' + access_token + '&per_page=1' + '&page=1')
-    X_RateLimit_Usage = None
-    if r.headers.get('X-RateLimit-Usage') is not None:
-        X_RateLimit_Usage = r.headers.get('X-RateLimit-Usage')
-    X_RateLimit_Limit = None
-    if r.headers.get('X-RateLimit-Limit') is not None:
-        X_RateLimit_Limit = r.headers.get('X-RateLimit-Limit')
-    if r.status_code < 200 or r.status_code > 300:
-        return {"error": r.content}, X_RateLimit_Usage, X_RateLimit_Limit
-    return json.loads(r.content), X_RateLimit_Usage, X_RateLimit_Limit
-
+###################################### APP LOGIC  ################################################################"
 
 def build_batch_summary_activities(strava_activities: List[Dict]) -> List[Dict]:
     if len(strava_activities) == 0:
@@ -243,6 +239,15 @@ def build_details_activity_to_update(activity: {}) -> {}:
     return current_doc
 
 
+def check_valid_env_file(path_to_file):
+    with  open(path_to_file, 'r') as file_content:
+        contents = file_content.read()
+        if not contents.endswith("\n"):
+            print(path_to_file + " file must end with an empty line.")
+            exit(1)
+
+
+######################################  web app endpoints ####################################
 app = Flask(__name__)
 client = MongoClient('localhost', 27017)
 collection = client.strava.activities
