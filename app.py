@@ -5,7 +5,8 @@ import time
 from typing import Dict, List
 
 from flask import render_template
-
+from datetime import datetime
+from datetime import timedelta
 import dotenv
 import requests
 from flask import Flask
@@ -117,7 +118,7 @@ def get_summary_activities(r_token: dict, page_number: int, after: int = None) -
     r = requests.get(
         url + '?access_token=' + access_token + '&per_page=200' + '&page=' + str(page_number) + time_param)
     if r.status_code < 200 or r.status_code > 300:
-        print("Cannot activities ", r.content)
+        print("Cannot get summary activities ", r.content)
         return [{"error": r.content}]
     return r.json()
 
@@ -160,20 +161,31 @@ def get_last_downloaded_activity_from_mongo(collection):
     match = collection.find({}, {"start_date_local": 1, "_id": 0}).sort("start_date_local", -1).limit(1)
     date_array = [m for m in match]
     if len(date_array) == 0:
-        return "1970-01-01T00:00:00Z"
+        return datetime.strptime("1980-01-01", "%Y-%m-%d")
     else:
-        return (date_array[0]["start_date_local"]).split("T")[0]
+        return date_array[0]["start_date_local"]
 
 
-def get_average_speed_from_mongo(collection):
-    match = collection.find({"average_speed": {"$exists": True}},
-                            {"_id": 0, "average_speed": 1, "start_date_local": 1}).sort(
-        "start_date_local", 1)
+def get_average_speed_from_mongo(collection, year=None, month=None):
+    date_condition = {'$lte': datetime.today()}
+    if (year is not None) and (month is None):
+        date_condition['$gte'] = datetime(year, 1, 1, 0, 0, 0)
+        date_condition['$lte'] = datetime(year, 12, 31, 23, 59, 00)
+    elif (year is not None) and (month is not None):
+        date_condition['$gte'] = datetime(year, month, 1, 0, 0, 0)
+        date_condition['$lte'] = datetime(year, month, 29, 23, 59, 00) + timedelta(days=2)
+
+    # start = datetime(2020, 9, 24, 7, 51, 4)
+    match = collection.find({"average_speed": {"$exists": True}, "start_date_local": date_condition},
+                            {"_id": 0, "average_speed": 1, "start_date_local": 1}).sort("start_date_local", 1)
     res = []
     for m in match:
+        # print(m)
         doc = {}
         doc["speed"] = m["average_speed"] * 3.6
-        doc["date"] = (m["start_date_local"]).split("T")[0]
+        doc["date"] = str((m["start_date_local"]).year) + "-" + str((m["start_date_local"]).month) + "-" + str(
+            (m["start_date_local"]).day)
+        print("toto", doc["date"])
         res.append(doc)
     return res
 
@@ -193,7 +205,10 @@ def build_batch_summary_activities(strava_activities: List[Dict]) -> List[Dict]:
                        'average_watts', ]
         for k in level1_keys:
             if activity.get(k) is not None:
-                current_doc[k] = activity[k]
+                if k == 'start_date_local':
+                    current_doc[k] = datetime.strptime(activity[k], "%Y-%m-%dT%H:%M:%SZ")
+                else:
+                    current_doc[k] = activity[k]
             # add logging if key not found
 
         if current_doc is not {}:
@@ -228,7 +243,11 @@ def build_details_activity_to_update(activity: {}) -> {}:
             for i, seg in enumerate(list_of_segments):
                 for k in segments_keys:
                     if seg.get(k) is not None:
-                        current_doc['segment_efforts'][i][k] = seg[k]
+                        if k == 'start_date_local':
+                            current_doc['segment_efforts'][i][k] = datetime.strptime(seg[k],
+                                                                                     "%Y-%m-%dT%H:%M:%SZ")
+                        else:
+                            current_doc['segment_efforts'][i][k] = seg[k]
 
                 # get segment_efforts.segment.id'
                 if seg.get('segment') is not None:
@@ -260,11 +279,12 @@ def refresh():
     dotenv.load_dotenv(ENV_PATH)
     read_token = authenticate("READ")
     last_date_downloaded_activity = get_last_downloaded_activity_from_mongo(collection)
-    time_after = time.mktime(
-        datetime.datetime.strptime(last_date_downloaded_activity, "%Y-%m-%d").timetuple())
-    activities = get_summary_activities(r_token=read_token, page_number=1, after=time_after)
+    print(last_date_downloaded_activity)
+    # time_after = time.mktime(
+    #     datetime.strptime(last_date_downloaded_activity, "%Y-%m-%d").timetuple())
+    activities = get_summary_activities(r_token=read_token, page_number=1, after=last_date_downloaded_activity)
     li = build_batch_summary_activities(activities)
-    # # print(li)
+    # print(li)
     insert_activities_to_mongo(li, collection)
     ids_to_get_details = get_ids_activities_to_update_from_mongo(collection)
     # print(len(ids_to_get_details))
@@ -274,10 +294,13 @@ def refresh():
         details_activity = build_details_activity_to_update(detail)
         if details_activity is not {}:
             update_activity_into_mongo(doc_with_id, details_activity, collection)
+    return "done"
 
 
 @app.route('/average_speed')
-def average_speed():
+@app.route('/average_speed/<int:year>')
+@app.route('/average_speed/<int:year>/<int:month>')
+def average_speed(year=None, month=None):
     # check_valid_env_file(ENV_PATH)
     # # load env variable
     # dotenv.load_dotenv(ENV_PATH)
@@ -285,7 +308,7 @@ def average_speed():
     # last_activity_info = get_last_activity(read_token, "4098064182")
     # print(last_activity_info)
     # mov = collection.find(projection={'_id': 0})
-    data = get_average_speed_from_mongo(collection)
+    data = get_average_speed_from_mongo(collection, year, month)
     return render_template('index.html', datar=data)
     # return mov[0]
 
