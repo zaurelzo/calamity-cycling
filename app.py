@@ -4,7 +4,7 @@ from typing import Dict, List
 from flask import Flask
 from flask import render_template
 from pymongo import MongoClient
-
+import json
 from MongoAccess import MongoAccess
 from StravaAccess import StravaAccess
 
@@ -19,7 +19,7 @@ def build_batch_summary_activities(strava_activities: List[Dict]) -> List[Dict]:
         level1_keys = ['id', 'name', 'distance', 'moving_time', 'elapsed_time', 'total_elevation_gain',
                        'start_date_local', 'start_latlng', 'start_latlng', 'end_latlng', 'average_speed',
                        'max_speed',
-                       'average_watts', ]
+                       'average_watts', 'type']
         for k in level1_keys:
             if activity.get(k) is not None:
                 if k == 'start_date_local':
@@ -102,6 +102,12 @@ def refresh():
         if details_activity is not {}:
             mongo.update_activity_into_mongo(doc_with_id, details_activity)
     return "done"
+
+
+@app.route('/global_infos')
+def global_infos():
+    global_infos = mongo.get_global_infos()
+    return "done" + json.dumps(global_infos)
 
 
 @app.route('/average_speed')
