@@ -110,6 +110,24 @@ def global_infos():
     return "done" + json.dumps(global_infos)
 
 
+@app.route('/distance_by_month/<int:year>')
+def distance_by_month(year):
+    ret = mongo.distance_by_month(year)
+    return "done " + json.dumps(ret)
+
+
+@app.route("/get_all_segments")
+def get_all_segments():
+    segments = mongo.get_all_segments()
+    return "done " + ', '.join(segments)
+
+
+@app.route("/get_recorded_time_for_a_segment")
+def get_recorded_time_for_a_segment():
+    times = mongo.get_recorded_time_for_a_segment("Porte d'Italie > Porte d'Ivry")
+    return "domes " + ', '.join(times)
+
+
 @app.route('/average_speed')
 @app.route('/average_speed/<int:year>')
 @app.route('/average_speed/<int:year>/<int:month>')

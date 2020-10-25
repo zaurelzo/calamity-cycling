@@ -86,15 +86,46 @@ class MongoAccess:
         total_distance = self.collection.aggregate([{"$group": {"_id": "null", "sum": {"$sum": "$distance"}}}])
         array = [m for m in total_distance]
         global_infos["total_distance"] = array[0]["sum"] / 1000
-        # [{'_id': 'null', 'sum': 2829617.4}]
         return global_infos
 
     # for the given year, count the total distance by month
-    def distance_by_month(self, year):
-        pass
+    def distance_by_month(self, year) -> {}:
+        total_distance_by_month_for_a_given_year = self.collection.aggregate([
+            {"$project": {
+                "month": {"$month": "$start_date_local"},
+                "year": {"$year": "$start_date_local"},
+                "distance": 1
+            }},
+            {"$group": {
+                "_id": {"month": "$month", "year": "$year"},
+                "total": {"$sum": "$distance"}
+            }}])
+        array = []
+        for m in total_distance_by_month_for_a_given_year:
+            if m["_id"]["year"] == year:
+                m["total"] = m["total"] / 1000
+                array.append(m)
+        if len(array) != 0:
+            array = sorted(array, key=lambda elt: elt["_id"]["month"])
+        return array
 
-    def get_all_segment(self):
-        pass
+    # TODO : use unique segment id  instead of segment name
+    def get_all_segments(self) -> List:
+        unique_segments = self.collection.find().distinct("segment_efforts.name")
+        array = sorted([m for m in unique_segments])
+        return array
 
-    def get_taken_time_for_a_segment(self, segment):
-        pass
+    # TODO : use unique segment id  instead of segment name
+    def get_recorded_time_for_a_segment(self, segment):
+        match = self.collection.find({"segment_efforts.name": segment}, {"segment_efforts.$": 1, "_id": 0}).sort(
+            "segment_efforts.start_date_local", 1)
+        array = []
+        for m in match:
+            for o in m["segment_efforts"]:
+                o["date"] = str((o["start_date_local"]).year) + "-" + str((o["start_date_local"]).month) + "-" + str(
+                    (o["start_date_local"]).day)
+                del (o["start_date_local"])
+                del (o['segment'])
+                array.append(o)
+                print(array)
+        return array
