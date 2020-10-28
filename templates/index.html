@@ -9,9 +9,19 @@
 <!-- This will serve as a container for our chart. This does not have to be a div, and can in fact, just be the body if you want. -->
 <div id="chart"></div>
 
+<!--<div id="global-infos">-->
+<p> Global informations</p>
+<table>
+    <!-- here goes our data! -->
+</table>
+<!--</div>-->
+
 <script type="text/javascript">
 <!-- average_speed -->
 var average_speed_array = {{ datar|tojson }}
+var global_information = {{ global_infos|tojson }}
+
+
 </script>
 
 <!-- Include d3.js from a CDN. -->
@@ -19,5 +29,7 @@ var average_speed_array = {{ datar|tojson }}
 
 <!-- Include our script that will make our bar chart. -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/chart.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/global-infos.js') }}"></script>
+
 </body>
 </html>

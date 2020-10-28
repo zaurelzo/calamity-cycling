@@ -140,7 +140,8 @@ def average_speed(year=None, month=None):
     # print(last_activity_info)
     # mov = collection.find(projection={'_id': 0})
     data = mongo.get_average_speed_from_mongo(year, month)
-    return render_template('index.html', datar=data)
+    infos = mongo.get_global_infos()
+    return render_template('index.html', datar=data, global_infos=infos)
     # return mov[0]
 
 # if __name__ == "__main__":

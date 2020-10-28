@@ -13,8 +13,8 @@ const y = d3.scaleLinear()
 
          // define the line
          var line = d3.line()
-            .x(function(d) { console.log(d.date);return x(d.date); })
-            .y(function(d) { console.log(d.speed); return y(d.speed); });
+            .x(function(d) { return x(d.date); })
+            .y(function(d) {  return y(d.speed); });
 
 
 const svg = d3.select("#chart").append("svg")
@@ -26,7 +26,7 @@ const svg = d3.select("#chart").append("svg")
 
 
 //var average_speed_array = {{average_speed_arrayr|tojson}};
-console.log(average_speed_array)
+//console.log(average_speed_array)
 
     // Conversion des données du fichier, parsing des dates et '+' pour expliciter une valeur numérique.
     average_speed_array.forEach(function(d) {
