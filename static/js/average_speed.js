@@ -17,7 +17,7 @@ const y = d3.scaleLinear()
             .y(function(d) {  return y(d.speed); });
 
 
-const svg = d3.select("#chart").append("svg")
+const svg = d3.select("#average_speed").append("svg")
     .attr("id", "svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)

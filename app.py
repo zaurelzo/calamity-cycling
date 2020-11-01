@@ -132,17 +132,21 @@ def get_recorded_time_for_a_segment():
 @app.route('/average_speed/<int:year>')
 @app.route('/average_speed/<int:year>/<int:month>')
 def average_speed(year=None, month=None):
-    # check_valid_env_file(ENV_PATH)
-    # # load env variable
-    # dotenv.load_dotenv(ENV_PATH)
-    # read_token = authenticate("READ")
-    # last_activity_info = get_last_activity(read_token, "4098064182")
-    # print(last_activity_info)
-    # mov = collection.find(projection={'_id': 0})
     data = mongo.get_average_speed_from_mongo(year, month)
+    return data
+
+
+@app.route('/get_available_year_and_month')
+def get_available_year_and_month():
+    year_and_months = mongo.get_available_year_and_month()
+    return  json.dumps(year_and_months)
+
+
+@app.route("/")
+def home():
+    data = mongo.get_average_speed_from_mongo()
     infos = mongo.get_global_infos()
     return render_template('index.html', datar=data, global_infos=infos)
-    # return mov[0]
 
 # if __name__ == "__main__":
 #     check_valid_env_file(ENV_PATH)

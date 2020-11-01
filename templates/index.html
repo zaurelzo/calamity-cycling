@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <title>D3 Sample</title>
-</head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}"></head>
 <body>
+<div id="global-infos">
+    <p> Global informations</p>
+
+    <table id="top_activity_speed">
+        <!-- data generate by the js  -->
+    </table>
+
+    <table id="top_distance">
+        <!-- data generate by the js  -->
+    </table>
+</div>
 
 <!-- This will serve as a container for our chart. This does not have to be a div, and can in fact, just be the body if you want. -->
-<div id="chart"></div>
+<div id="average_speed">
+</div>
 
-<!--<div id="global-infos">-->
-<p> Global informations</p>
-<table>
-    <!-- here goes our data! -->
-</table>
-<!--</div>-->
 
 <script type="text/javascript">
-<!-- average_speed -->
 var average_speed_array = {{ datar|tojson }}
 var global_information = {{ global_infos|tojson }}
-
 
 </script>
 
@@ -28,8 +32,13 @@ var global_information = {{ global_infos|tojson }}
 <script type="text/javascript" src="{{ url_for('static', filename='js/d3/d3.js') }}"></script>
 
 <!-- Include our script that will make our bar chart. -->
-<script type="text/javascript" src="{{ url_for('static', filename='js/chart.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/average_speed.js') }}"></script>
+<!-- show global info -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/global-infos.js') }}"></script>
 
+<!-- bootstrap need jquery-->
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>
+<!--bootstrap -->
+<script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
 </body>
 </html>
