@@ -55,7 +55,6 @@ class MongoAccess:
             doc["speed"] = m["average_speed"] * 3.6
             doc["date"] = str((m["start_date_local"]).year) + "-" + str((m["start_date_local"]).month) + "-" + str(
                 (m["start_date_local"]).day)
-            print("toto", doc["date"])
             res.append(doc)
         return res
 
@@ -86,7 +85,7 @@ class MongoAccess:
 
         total_distance = self.collection.aggregate([{"$group": {"_id": "null", "sum": {"$sum": "$distance"}}}])
         array = [m for m in total_distance]
-        global_infos["total_distance"] = round(array[0]["sum"] / 1000, 2)
+        global_infos["total_distance"] = {"total distance (km) ": round(array[0]["sum"] / 1000, 2)}
         return global_infos
 
     # for the given year, count the total distance by month

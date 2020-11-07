@@ -3,32 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <title>D3 Sample</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}"></head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="viewport" content="width = device-width, initial-scale = 1.0">
+</head>
+
 <body>
-<div id="global-infos">
+<div class="container" id=" global-infos">
     <p> Global informations</p>
 
-    <table id="top_activity_speed">
+    <table class="table table-striped" id="top_activity_speed">
         <!-- data generate by the js  -->
+        <caption>Fastest activity information</caption>
     </table>
 
-    <table id="top_distance">
-        <!-- data generate by the js  -->
+    <table class="table table-striped " id="top_distance">
+        <caption>Longest activity information</caption>
+    </table>
+    <table class="table table-striped " id="total_distance">
+        <caption>Total cycling distance</caption>
     </table>
 </div>
 
+
 <!-- This will serve as a container for our chart. This does not have to be a div, and can in fact, just be the body if you want. -->
-<div id="average_speed">
+<div class="container" id="average_speed">
+    <div class="row">
+        <select class=" btn-mini" id="select-year" onchange="updateAvailableMonths()">
+            <option selected>All years</option>
+        </select>
+        <select class=" btn-mini" id="select-month">
+            <option selected>All months</option>
+        </select>
+         <button type="button" class=".btn-primary" id="retrieve-average-speed">retrieve</button>
+    </div>
+
+
 </div>
 
 
 <script type="text/javascript">
-var average_speed_array = {{ datar|tojson }}
-var global_information = {{ global_infos|tojson }}
-
+    var average_speed_array = {{ datar|tojson }}
+    var global_information = {{ global_infos|tojson }}
+    var years_and_months = {{ y_and_m|tojson }}
 </script>
 
-<!-- Include d3.js from a CDN. -->
+<!-- bootstrap need jquery-->
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap/bootstrap.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/d3/d3.js') }}"></script>
 
 <!-- Include our script that will make our bar chart. -->
@@ -36,9 +59,6 @@ var global_information = {{ global_infos|tojson }}
 <!-- show global info -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/global-infos.js') }}"></script>
 
-<!-- bootstrap need jquery-->
-<script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>
-<!--bootstrap -->
-<script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+
 </body>
 </html>
