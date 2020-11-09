@@ -2,6 +2,7 @@ from pymongo.errors import BulkWriteError
 from datetime import timedelta
 from typing import Dict, List
 from datetime import datetime
+import calendar
 
 
 class MongoAccess:
@@ -102,11 +103,14 @@ class MongoAccess:
             }}])
         array = []
         for m in total_distance_by_month_for_a_given_year:
+            dist = {}
             if m["_id"]["year"] == year:
-                m["total"] = m["total"] / 1000
-                array.append(m)
+                dist["month"] = calendar.month_name[m["_id"]["month"]]
+                dist["distance"] = int(m["total"] / 1000)
+                dist["id"] = m["_id"]["month"]
+                array.append(dist)
         if len(array) != 0:
-            array = sorted(array, key=lambda elt: elt["_id"]["month"])
+            array = sorted(array, key=lambda elt: elt["id"])
         return array
 
     def get_available_year_and_month(self):
@@ -120,12 +124,13 @@ class MongoAccess:
             }}])
         res = {}
         for y__and_m in avaible_year_and_months:
+            month_id = y__and_m["_id"]["month"]
             if res.get(y__and_m["_id"]["year"]) is None:
-                res[y__and_m["_id"]["year"]] = [y__and_m["_id"]["month"]]
+                res[y__and_m["_id"]["year"]] = [month_id]
             else:
-                res[y__and_m["_id"]["year"]].append(y__and_m["_id"]["month"])
+                res[y__and_m["_id"]["year"]].append(month_id)
         for year in res:
-            res[year] = sorted(res[year])
+            res[year] = list(map(lambda x: calendar.month_name[x], sorted(res[year])))
         # if len(array) != 0:
         #     array = sorted(array, key=lambda elt: elt["_id"]["month"])
         print("array ", res)

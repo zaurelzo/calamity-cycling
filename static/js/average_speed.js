@@ -57,8 +57,7 @@ function buildAverageSpeedGraph(averageSpeedData) {
                 .text(" average speed");
 
 
-          svg
-        .append('defs')
+        svg.append('defs')
         .append('marker')
         .attr('id', 'dot')
         .attr('viewBox', [0, 0, 20, 20])
@@ -90,7 +89,7 @@ function buildAverageSpeedGraph(averageSpeedData) {
 buildAverageSpeedGraph(average_speed_array);
 
 //build the dropdown menu to show the available year and month for the average speed graph
-let select_year_button  = document.querySelector("#select-year");
+var select_year_button  = document.querySelector("#select-year");
 createOptionElement(select_year_button,Object.keys(years_and_months))
 //
 function createOptionElement (ul, list_option_element){
@@ -114,6 +113,8 @@ function updateAvailableMonths() {
     }
 }
 
+const month_to_id = {"JANUARY":1,"FEBRUARY":2,"MARCH":3,"APRIL":4,"MAY":5,"JUNE":6,
+"JULY":7,"AUGUST":8,"SEPTEMBER":9,"OCTOBER":10,"NOVEMBER":11,"DECEMBER":12};
 
 // update the average speed graph when clicking on th retrieve button
 (function() {
@@ -127,14 +128,14 @@ function updateAvailableMonths() {
       alert('Abandon :( Impossible de créer une instance de XMLHTTP');
       return false;
     }
-    httpRequest.onreadystatechange = alertContents;
+    httpRequest.onreadystatechange = showNewAverageSpeed;
     var e = document.querySelector("#select-year");
     var year = e.options[e.selectedIndex].text;
     var f = document.querySelector("#select-month");
     var month = f.options[f.selectedIndex].text;
     var ulr_average_speed
     if (year !=="All years" && month!=="All months"){
-        ulr_average_speed ="average_speed"+ "/" + year + "/"+month
+        ulr_average_speed ="average_speed"+ "/" + year + "/"+  month_to_id[month.toUpperCase()]
     }else if (year !=="All years" && month!=="All months" ){
         ulr_average_speed ="average_speed"+ "/" + year
     }else {
@@ -144,7 +145,7 @@ function updateAvailableMonths() {
     httpRequest.send();
   }
 
-  function alertContents() {
+  function showNewAverageSpeed() {
     if (httpRequest.readyState === XMLHttpRequest.DONE) {
       if (httpRequest.status === 200) {
         var asJson = JSON.parse(httpRequest.responseText);

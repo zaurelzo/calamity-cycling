@@ -37,16 +37,10 @@ def refresh():
     return "done"
 
 
-@app.route('/global_infos')
-def global_infos():
-    global_infos = mongo.get_global_infos()
-    return "done" + json.dumps(global_infos)
-
-
 @app.route('/distance_by_month/<int:year>')
 def distance_by_month(year):
     ret = mongo.distance_by_month(year)
-    return "done " + json.dumps(ret)
+    return {"monthly_dist": ret}
 
 
 @app.route("/get_all_segments")
@@ -68,19 +62,15 @@ def average_speed(year=None, month=None):
     data = mongo.get_average_speed_from_mongo(year, month)
     return {"average_speed": data}
 
-
-@app.route('/get_available_year_and_month')
-def get_available_year_and_month():
-    year_and_months = mongo.get_available_year_and_month()
-    return json.dumps(year_and_months)
-
-
 @app.route("/")
 def home():
     data = mongo.get_average_speed_from_mongo()
     infos = mongo.get_global_infos()
     year_and_months = mongo.get_available_year_and_month()
-    return render_template('index.html', datar=data, global_infos=infos, y_and_m=year_and_months)
+    current_year = datetime.now().year
+    dist_by_month = mongo.distance_by_month(current_year)
+    return render_template('index.html', datar=data, global_infos=infos, y_and_m=year_and_months,
+                           monthy_dist=dist_by_month)
 
 # if __name__ == "__main__":
 #     check_valid_env_file(ENV_PATH)

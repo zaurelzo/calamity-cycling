@@ -26,7 +26,7 @@
 </div>
 
 
-<!-- This will serve as a container for our chart. This does not have to be a div, and can in fact, just be the body if you want. -->
+<!--average speed -->
 <div class="container" id="average_speed">
     <div class="row">
         <select class=" btn-mini" id="select-year" onchange="updateAvailableMonths()">
@@ -35,10 +35,17 @@
         <select class=" btn-mini" id="select-month">
             <option selected>All months</option>
         </select>
-         <button type="button" class=".btn-primary" id="retrieve-average-speed">retrieve</button>
+        <button type="button" class=".btn-primary" id="retrieve-average-speed">retrieve</button>
     </div>
+</div>
 
-
+<div class="container" id="monthly-distance">
+    <div class="row">
+        <select class=" btn-mini" id="select-year-monthly-dist">
+            <option selected>Open to select a year</option>
+        </select>
+        <button type="button" class=".btn-primary" id="retrieve-monthly-dist">retrieve</button>
+    </div>
 </div>
 
 
@@ -46,6 +53,9 @@
     var average_speed_array = {{ datar|tojson }}
     var global_information = {{ global_infos|tojson }}
     var years_and_months = {{ y_and_m|tojson }}
+    var monthly_distance  = {{monthy_dist|tojson }}
+
+
 </script>
 
 <!-- bootstrap need jquery-->
@@ -58,6 +68,8 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/average_speed.js') }}"></script>
 <!-- show global info -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/global-infos.js') }}"></script>
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/monthly-distance.js') }}"></script>
 
 
 </body>
