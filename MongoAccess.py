@@ -138,21 +138,39 @@ class MongoAccess:
 
     # TODO : use unique segment id  instead of segment name
     def get_all_segments(self) -> List:
-        unique_segments = self.collection.find().distinct("segment_efforts.name")
-        array = sorted([m for m in unique_segments])
-        return array
+        segment_name_and_id = self.collection.aggregate(
+            [{"$group": {"_id": {"name": "$segment_efforts.name", "id": "$segment_efforts.segment.id"}}}])
+        # unique_segments = self.collection.find().distinct("segment_efforts.name")
+        seg_and_id = {}
+        i = 0
+        for m in segment_name_and_id:
+            if m["_id"].get("name") is not None:
+                for name_and_id in zip(m["_id"]["name"], m["_id"]["id"]):
+                    if seg_and_id.get(name_and_id[0].strip()) is None:
+                        seg_and_id[name_and_id[0].strip()] = name_and_id[1]
+        return seg_and_id
 
-    # TODO : use unique segment id  instead of segment name
-    def get_recorded_time_for_a_segment(self, segment):
-        match = self.collection.find({"segment_efforts.name": segment}, {"segment_efforts.$": 1, "_id": 0}).sort(
+    def get_recorded_time_for_a_segment(self, segment_id):
+        match = self.collection.find({"segment_efforts.segment.id": segment_id}).sort(
             "segment_efforts.start_date_local", 1)
         array = []
+        segment_effort_by_day = {}
         for m in match:
             for o in m["segment_efforts"]:
-                o["date"] = str((o["start_date_local"]).year) + "-" + str((o["start_date_local"]).month) + "-" + str(
-                    (o["start_date_local"]).day)
-                del (o["start_date_local"])
-                del (o['segment'])
-                array.append(o)
-                print(array)
+                if o["segment"]["id"] == segment_id:
+                    date = str((o["start_date_local"]).year) + "-" + str((o["start_date_local"]).month) \
+                           + "-" + str((o["start_date_local"]).day)
+                    o["date"] = date
+                    o["speed"] = (o["distance"] / o["elapsed_time"]) * 3.6
+                    del (o["start_date_local"])
+                    del (o['segment'])
+                    # if a segement is recorded multiple time on the same day, take the shortest elapsed_time
+                    # (ie highest speed) for this day
+                    if segment_effort_by_day.get(date) is None:
+                        segment_effort_by_day[date] = o
+                    elif segment_effort_by_day[date]["elapsed_time"] > o["elapsed_time"]:
+                        segment_effort_by_day[date] = o
+        print(segment_effort_by_day)
+        for key in segment_effort_by_day:
+            array.append(segment_effort_by_day[key])
         return array

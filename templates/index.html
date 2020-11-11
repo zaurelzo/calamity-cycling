@@ -10,18 +10,20 @@
 
 <body>
 <div class="container" id=" global-infos">
-    <p> Global informations</p>
-
+    <p>Global information</p>
     <table class="table table-striped" id="top_activity_speed">
         <!-- data generate by the js  -->
         <caption>Fastest activity information</caption>
     </table>
 
+
     <table class="table table-striped " id="top_distance">
         <caption>Longest activity information</caption>
     </table>
+    <div class="container"></div>
+
     <table class="table table-striped " id="total_distance">
-        <caption>Total cycling distance</caption>
+        <!--        <caption>Total cycling distance</caption>-->
     </table>
 </div>
 
@@ -49,11 +51,36 @@
 </div>
 
 
+<div class="container" id="segment-info">
+    <div class="row">
+        <select class="btn-mini" id="select-segments-info" data-live-search="true">
+            <option selected>Open to select a segment</option>
+        </select>
+        <button type="button" class=".btn-primary" id="retrieve-segment-info">retrieve</button>
+    </div>
+</div>
+
+
 <script type="text/javascript">
     var average_speed_array = {{ datar|tojson }}
     var global_information = {{ global_infos|tojson }}
     var years_and_months = {{ y_and_m|tojson }}
     var monthly_distance  = {{monthy_dist|tojson }}
+    var segments = {{segs|tojson }}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 </script>
@@ -70,6 +97,7 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/global-infos.js') }}"></script>
 
 <script type="text/javascript" src="{{ url_for('static', filename='js/monthly-distance.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/segment.js') }}"></script>
 
 
 </body>

@@ -1,6 +1,4 @@
-
-
-function buildAverageSpeedGraph(averageSpeedData) {
+function buildAverageSpeedForAGivenSegment(averageSpeedData) {
     var margin = {top: 20, right: 30, bottom: 30, left: 60};
     var width = document.getElementById('average_speed').clientWidth - margin.left - margin.right;
     var  height = document.getElementById('average_speed').clientWidth/3.236 - margin.top - margin.bottom;
@@ -20,7 +18,7 @@ function buildAverageSpeedGraph(averageSpeedData) {
                 .y(function(d) {  return y(d.speed); });
 
 
-    const svg = d3.select("#average_speed").append("svg")
+    const svg = d3.select("#segment-info").append("svg")
         .attr("id", "svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
@@ -86,40 +84,17 @@ function buildAverageSpeedGraph(averageSpeedData) {
 
 }
 
-buildAverageSpeedGraph(average_speed_array);
+//build the dropdown menu to show the available segment name
+var select_segments_button  = document.querySelector("#select-segments-info");
+//function from average_speed.js
+createOptionElement(select_segments_button,Object.keys(segments));
 
-//build the dropdown menu to show the available year and month for the average speed graph
-var select_year_button  = document.querySelector("#select-year");
-createOptionElement(select_year_button,Object.keys(years_and_months))
-//
-function createOptionElement (ul, list_option_element){
-    for (li_value of list_option_element) {
-        var li=document.createElement('option');
-        li.innerHTML=li_value
-        ul.appendChild(li);
-    }
-}
-
-
-function updateAvailableMonths() {
-    var e = document.querySelector("#select-year");
-    var value = e.options[e.selectedIndex].text;
-    if (years_and_months.hasOwnProperty(value)){
-        let select_month_button  = document.querySelector("#select-month");
-        createOptionElement(select_month_button,years_and_months[value])
-    }else {
-        //keep the first option
-    	document.querySelector("#select-month").options.length = 1;
-    }
-}
-
-const month_to_id = {"JANUARY":1,"FEBRUARY":2,"MARCH":3,"APRIL":4,"MAY":5,"JUNE":6,
-"JULY":7,"AUGUST":8,"SEPTEMBER":9,"OCTOBER":10,"NOVEMBER":11,"DECEMBER":12};
+buildAverageSpeedForAGivenSegment([]);
 
 // update the average speed graph when clicking on th retrieve button
 (function() {
   var httpRequest;
-  document.getElementById("retrieve-average-speed").addEventListener('click', makeRequest);
+  document.getElementById("retrieve-segment-info").addEventListener('click', makeRequest);
 
   function makeRequest() {
     httpRequest = new XMLHttpRequest();
@@ -128,36 +103,30 @@ const month_to_id = {"JANUARY":1,"FEBRUARY":2,"MARCH":3,"APRIL":4,"MAY":5,"JUNE"
       alert('Abandon :( Impossible de créer une instance de XMLHTTP');
       return false;
     }
-    httpRequest.onreadystatechange = showNewAverageSpeed;
-    var e = document.querySelector("#select-year");
-    var year = e.options[e.selectedIndex].text;
-    var f = document.querySelector("#select-month");
-    var month = f.options[f.selectedIndex].text;
-    var ulr_average_speed
-    if (year !=="All years" && month!=="All months"){
-        ulr_average_speed ="average_speed"+ "/" + year + "/"+  month_to_id[month.toUpperCase()]
-    }else if (year !=="All years" && month!=="All months" ){
-        ulr_average_speed ="average_speed"+ "/" + year
+    httpRequest.onreadystatechange = showSegmentsInfo;
+    var e = document.querySelector("#select-segments-info");
+    var seg = e.options[e.selectedIndex].text;
+    if (seg !=="Open to select a segment" ){
+        console.log(typeof seg);
+        var seg_id = segments[seg]
+        console.log("get_recorded_time_for_a_segment/"+seg_id);
+        httpRequest.open('GET',"get_recorded_time_for_a_segment/"+seg_id );
+        httpRequest.send();
     }else {
-        ulr_average_speed ="average_speed"
+        return false;
     }
-    httpRequest.open('GET', ulr_average_speed );
-    httpRequest.send();
+
   }
 
-  function showNewAverageSpeed() {
+  function showSegmentsInfo() {
     if (httpRequest.readyState === XMLHttpRequest.DONE) {
       if (httpRequest.status === 200) {
         var asJson = JSON.parse(httpRequest.responseText);
-        d3.select("#average_speed").select("svg").remove();
-        buildAverageSpeedGraph(asJson["average_speed"]);
+        d3.select("#segment-info").select("svg").remove();
+        buildAverageSpeedForAGivenSegment(asJson["segments"]);
       } else {
         alert('Il y a eu un problème avec la requête.');
       }
     }
   }
 })();
-
-
-
-

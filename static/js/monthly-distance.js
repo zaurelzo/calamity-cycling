@@ -53,7 +53,7 @@ function buildMonthlyDistanceChart(monthlyDistance) {
                 .attr("y", 6)
                 .attr("dy", "0.71em")
                 .style("text-anchor", "end")
-                .text("Monthly distance");
+                .text("km");
 
         // Ajout des bars en utilisant les données de notre fichier data.tsv
         // La largeur de la barre est déterminée par la fonction x
@@ -71,11 +71,7 @@ function buildMonthlyDistanceChart(monthlyDistance) {
             .attr("height", d => height - y(d.distance));
 }
 
-var d = [
-{"distance":2,"month":"fr"},
-{"distance":5,"month":"en"}];
 
-//console.log(monthly_distance);
 buildMonthlyDistanceChart(monthly_distance);
 
 
@@ -100,7 +96,6 @@ createOptionElement(select_year_button,Object.keys(years_and_months));
     httpRequest.onreadystatechange = showNewDistances;
     var e = document.querySelector("#select-year-monthly-dist");
     var year = e.options[e.selectedIndex].text;
-    var ulr_average_speed
     if (year !=="Open to select a year" ){
         httpRequest.open('GET'," distance_by_month/"+year );
         httpRequest.send();
@@ -122,4 +117,5 @@ createOptionElement(select_year_button,Object.keys(years_and_months));
     }
   }
 })();
+
 

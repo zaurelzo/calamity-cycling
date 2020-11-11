@@ -8,6 +8,7 @@ import json
 from MongoAccess import MongoAccess
 from StravaAccess import StravaAccess
 import Utils
+import time
 
 app = Flask(__name__)
 client = MongoClient('localhost', 27017)
@@ -23,6 +24,7 @@ def refresh():
     # time_after = time.mktime(
     #     datetime.strptime(last_date_downloaded_activity, "%Y-%m-%d").timetuple())
     activities = strava.get_summary_activities(page_number=1, after=last_date_downloaded_activity)
+    print(activities)
     li = Utils.build_batch_summary_activities(activities)
     # print(li)
     mongo.insert_activities_to_mongo(li)
@@ -46,13 +48,15 @@ def distance_by_month(year):
 @app.route("/get_all_segments")
 def get_all_segments():
     segments = mongo.get_all_segments()
-    return "done " + ', '.join(segments)
+    return {"segments": segments}
 
 
-@app.route("/get_recorded_time_for_a_segment")
-def get_recorded_time_for_a_segment():
-    times = mongo.get_recorded_time_for_a_segment("Porte d'Italie > Porte d'Ivry")
-    return "domes " + ', '.join(times)
+@app.route("/get_recorded_time_for_a_segment/<int:segment_id>")
+def get_recorded_time_for_a_segment(segment_id):
+    print(type(segment_id))
+    times = mongo.get_recorded_time_for_a_segment(segment_id)
+    # print(times)
+    return {"segments": times}
 
 
 @app.route('/average_speed')
@@ -62,6 +66,7 @@ def average_speed(year=None, month=None):
     data = mongo.get_average_speed_from_mongo(year, month)
     return {"average_speed": data}
 
+
 @app.route("/")
 def home():
     data = mongo.get_average_speed_from_mongo()
@@ -69,29 +74,6 @@ def home():
     year_and_months = mongo.get_available_year_and_month()
     current_year = datetime.now().year
     dist_by_month = mongo.distance_by_month(current_year)
+    segments = mongo.get_all_segments()
     return render_template('index.html', datar=data, global_infos=infos, y_and_m=year_and_months,
-                           monthy_dist=dist_by_month)
-
-# if __name__ == "__main__":
-#     check_valid_env_file(ENV_PATH)
-#     # load env variable
-#     dotenv.load_dotenv(ENV_PATH)
-#     read_token = authenticate("READ")
-#     client = MongoClient('localhost', 27017)
-#     collection = client.strava.activities
-#     # last_date_downloaded_activity = get_last_downloaded_activity_from_mongo(collection)
-#     # time_after = time.mktime(
-#     #     datetime.datetime.strptime(last_date_downloaded_activity, "%Y-%m-%d").timetuple())
-#     # activities = get_summary_activities(r_token=read_token, page_number=1, after=time_after)
-#     # li = build_batch_summary_activities(activities)
-#     # # # print(li)
-#     # insert_activities_to_mongo(li, collection)
-#     # ids_to_get_details = get_ids_activities_to_update_from_mongo(collection)
-#     # print(len(ids_to_get_details))
-#     # for doc_with_id in ids_to_get_details:
-#     #     detail, _, _ = get_details_activity(r_token=read_token, activity_id=str(doc_with_id["id"]))
-#     #     details_activity = build_details_activity_to_update(detail)
-#     #     if details_activity is not {}:
-#     #         update_activity_into_mongo(doc_with_id, details_activity, collection)
-#
-#     print(get_average_speed_from_mongo(collection))
+                           monthy_dist=dist_by_month, segs=segments)
