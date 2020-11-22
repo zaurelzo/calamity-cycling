@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>D3 Sample</title>
+    <title>Calamity cycling</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <meta name="viewport" content="width = device-width, initial-scale = 1.0">
@@ -53,9 +53,19 @@
 
 <div class="container" id="segment-info">
     <div class="row">
+        <select class="btn-mini" id="segements-order" onchange="sortSegments()">
+            <option selected>Select sorting segments criteria</option>
+            <option>Ascending average grade</option>
+            <option>Descending average grade</option>
+            <option>Ascending distance</option>
+            <option>Descending distance</option>
+            <option>Ascending segment name</option>
+            <option>Descending segment name</option>
+        </select>
         <select class="btn-mini" id="select-segments-info" data-live-search="true">
             <option selected>Open to select a segment</option>
         </select>
+
         <button type="button" class=".btn-primary" id="retrieve-segment-info">retrieve</button>
     </div>
 </div>
@@ -67,18 +77,6 @@
     var years_and_months = {{ y_and_m|tojson }}
     var monthly_distance  = {{monthy_dist|tojson }}
     var segments = {{segs|tojson }}
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

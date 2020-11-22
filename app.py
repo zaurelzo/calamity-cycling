@@ -20,22 +20,27 @@ strava = StravaAccess()
 @app.route('/refresh')
 def refresh():
     last_date_downloaded_activity = mongo.get_last_downloaded_activity_from_mongo()
-    print(last_date_downloaded_activity)
+    print("Last downloaded activity ", last_date_downloaded_activity)
     # time_after = time.mktime(
     #     datetime.strptime(last_date_downloaded_activity, "%Y-%m-%d").timetuple())
     activities = strava.get_summary_activities(page_number=1, after=last_date_downloaded_activity)
-    print(activities)
+    # print(activities)
     li = Utils.build_batch_summary_activities(activities)
     # print(li)
     mongo.insert_activities_to_mongo(li)
     ids_to_get_details = mongo.get_ids_activities_to_update_from_mongo()
     # print(len(ids_to_get_details))
+    print("retrieving " + str(len(ids_to_get_details)) + " activities")
     for doc_with_id in ids_to_get_details:
+        print("Get detailled activity for " + str(doc_with_id))
         # TODO : stop this loop if we reach api usage limit
         detail, _, _ = strava.get_details_activity(activity_id=str(doc_with_id["id"]))
-        details_activity = Utils.build_details_activity_to_update(detail)
+        details_activity = Utils.build_details_activiget_all_segmentsty_to_update(detail)
+        print(details_activity)
         if details_activity is not {}:
             mongo.update_activity_into_mongo(doc_with_id, details_activity)
+            print("update activity " + str(doc_with_id))
+        print("done for activity " + str(doc_with_id))
     return "done"
 
 
@@ -53,9 +58,7 @@ def get_all_segments():
 
 @app.route("/get_recorded_time_for_a_segment/<int:segment_id>")
 def get_recorded_time_for_a_segment(segment_id):
-    print(type(segment_id))
     times = mongo.get_recorded_time_for_a_segment(segment_id)
-    # print(times)
     return {"segments": times}
 
 

@@ -44,7 +44,7 @@ def build_details_activity_to_update(activity: {}) -> {}:
         # add logging if key not found
 
     # keep interesting key in segments efforts.
-    if activity.get('segment_efforts'):
+    if activity.get('segment_efforts') is not None:
         list_of_segments = activity['segment_efforts']
         if list_of_segments is not None:
             current_doc['segment_efforts'] = []
@@ -64,6 +64,11 @@ def build_details_activity_to_update(activity: {}) -> {}:
                 if seg.get('segment') is not None:
                     if seg.get('segment').get('id') is not None:
                         current_doc['segment_efforts'][i]['segment'] = {'id': seg.get('segment').get('id')}
-                # add logging if key not found
+                        current_doc['segment_efforts'][i]['segment'] = {'id': seg.get('segment').get('id'),
+                                                                        "average_grade": seg.get('segment').get(
+                                                                            'average_grade'),
+                                                                        "distance": seg.get('segment').get(
+                                                                            'distance')}
+    # add logging if key not found
 
     return current_doc

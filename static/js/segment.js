@@ -91,7 +91,7 @@ createOptionElement(select_segments_button,Object.keys(segments));
 
 buildAverageSpeedForAGivenSegment([]);
 
-// update the average speed graph when clicking on th retrieve button
+// update the average speed of a segment when clicking on th retrieve button
 (function() {
   var httpRequest;
   document.getElementById("retrieve-segment-info").addEventListener('click', makeRequest);
@@ -107,10 +107,9 @@ buildAverageSpeedForAGivenSegment([]);
     var e = document.querySelector("#select-segments-info");
     var seg = e.options[e.selectedIndex].text;
     if (seg !=="Open to select a segment" ){
-        console.log(typeof seg);
-        var seg_id = segments[seg]
-        console.log("get_recorded_time_for_a_segment/"+seg_id);
-        httpRequest.open('GET',"get_recorded_time_for_a_segment/"+seg_id );
+        var seg_id_dist_grade = segments[seg]
+        console.log("get_recorded_time_for_a_segment/"+seg_id_dist_grade[0]);
+        httpRequest.open('GET',"get_recorded_time_for_a_segment/"+seg_id_dist_grade[0] );
         httpRequest.send();
     }else {
         return false;
@@ -130,3 +129,89 @@ buildAverageSpeedForAGivenSegment([]);
     }
   }
 })();
+
+
+//sort segments
+function sortSegments() {
+
+    var e = document.querySelector("#segements-order");
+    var criteria = e.options[e.selectedIndex].text;
+    var sortable = [];
+    var keysSorted = {};
+    console.log(segments);
+    for (var seg in segments) {
+        //segment name, id, distance, average grade
+        sortable.push([seg,segments[seg][0], segments[seg][1],segments[seg][2]]);
+    }
+    switch(criteria) {
+        case 'Ascending average grade' :
+            sortable.sort(function(a, b) { return a[3] - b[3];});
+             for (var id in sortable) {
+                keysSorted[sortable[id][0]]=sortable[id][3];
+             }
+            break;
+        case 'Descending average grade' :
+            sortable.sort(function(a, b) { return b[3] - a[3];});
+            for (var id in sortable) {
+                keysSorted[sortable[id][0]]=sortable[id][3];
+             }
+            break;
+        case 'Ascending distance' :
+            sortable.sort(function(a, b) { return a[2] - b[2];});
+            for (var id in sortable) {
+                keysSorted[sortable[id][0]]=sortable[id][2];
+             }
+            break;
+        case 'Descending distance' :
+            sortable.sort(function(a, b) { return b[2] - a[2];});
+            for (var id in sortable) {
+                keysSorted[sortable[id][0]]=sortable[id][2];
+             }
+            break;
+        case 'Ascending segment name':
+            sortable.sort(function(a, b) {
+            if (b > a) {
+                 return -1;
+            }
+             if (a > b) {
+                 return 1;
+              }
+              return 0;}
+            );
+            for (var id in sortable) {
+                keysSorted[sortable[id][0]]=sortable[id][0];
+             }
+            break;
+        case 'Descending segment name':
+            sortable.sort(function(a, b) {
+            if (a > b) {
+                 return -1;
+            }
+             if (b > a) {
+                 return 1;
+              }
+              return 0;}
+            );
+            for (var id in sortable) {
+                keysSorted[sortable[id][0]]=sortable[id][0];
+             }
+            break;
+        default:
+            keysSorted = segments;
+            break;
+    }
+    console.log(keysSorted);
+    document.querySelector("#select-segments-info").options.length = 1;
+    //build the dropdown menu to show the available segment name
+    var select_segments_button  = document.querySelector("#select-segments-info");
+    //function from average_speed.js
+    createOptionElement(select_segments_button,Object.keys(keysSorted));
+//    if (years_and_months.hasOwnProperty(value)){
+//        let select_month_button  = document.querySelector("#select-month");
+//        createOptionElement(select_month_button,years_and_months[value])
+//    }else {
+//        //keep the first option
+//    	document.querySelector("#select-month").options.length = 1;
+//    }
+}
+

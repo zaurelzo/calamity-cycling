@@ -67,26 +67,29 @@ class MongoAccess:
                                                    'distance': 1}).sort(
             "average_speed", -1).limit(1)
         array = [m for m in top_activity_speed]
+        if len(array) != 0:
+            global_infos["top_activity_speed"] = {'average_speed (km/h)': round(array[0]['average_speed'] * 3.6, 2),
+                                                  'distance (km)': round(array[0]['distance'] / 1000, 2),
+                                                  "date": str((array[0]["start_date_local"]).year) + "-" + str(
+                                                      (array[0]["start_date_local"]).month) + "-" + str(
+                                                      (array[0]["start_date_local"]).day)}
 
-        global_infos["top_activity_speed"] = {'average_speed (km/h)': round(array[0]['average_speed'] * 3.6, 2),
-                                              'distance (km)': round(array[0]['distance'] / 1000, 2),
-                                              "date": str((array[0]["start_date_local"]).year) + "-" + str(
-                                                  (array[0]["start_date_local"]).month) + "-" + str(
-                                                  (array[0]["start_date_local"]).day)}
         top_distance = self.collection.find({"type": "Ride"},
                                             {"average_speed": 1, "_id": 0, "start_date_local": 1,
                                              'distance': 1}).sort(
             "distance", -1).limit(1)
         array = [m for m in top_distance]
-        global_infos["top_distance"] = {'average_speed (km/h)': round(array[0]['average_speed'] * 3.6, 2),
-                                        'distance (km)': round(array[0]['distance'] / 1000, 2),
-                                        "date": str((array[0]["start_date_local"]).year) + "-" + str(
-                                            (array[0]["start_date_local"]).month) + "-" + str(
-                                            (array[0]["start_date_local"]).day)}
+        if len(array) != 0:
+            global_infos["top_distance"] = {'average_speed (km/h)': round(array[0]['average_speed'] * 3.6, 2),
+                                            'distance (km)': round(array[0]['distance'] / 1000, 2),
+                                            "date": str((array[0]["start_date_local"]).year) + "-" + str(
+                                                (array[0]["start_date_local"]).month) + "-" + str(
+                                                (array[0]["start_date_local"]).day)}
 
         total_distance = self.collection.aggregate([{"$group": {"_id": "null", "sum": {"$sum": "$distance"}}}])
         array = [m for m in total_distance]
-        global_infos["total_distance"] = {"total distance (km) ": round(array[0]["sum"] / 1000, 2)}
+        if len(array) != 0:
+            global_infos["total_distance"] = {"total distance (km) ": round(array[0]["sum"] / 1000, 2)}
         return global_infos
 
     # for the given year, count the total distance by month
@@ -139,15 +142,19 @@ class MongoAccess:
     # TODO : use unique segment id  instead of segment name
     def get_all_segments(self) -> List:
         segment_name_and_id = self.collection.aggregate(
-            [{"$group": {"_id": {"name": "$segment_efforts.name", "id": "$segment_efforts.segment.id"}}}])
+            [{"$group": {"_id": {"name": "$segment_efforts.name", "id": "$segment_efforts.segment.id",
+                                 "distance": "$segment_efforts.segment.distance",
+                                 "average_grade": "$segment_efforts.segment.average_grade"}}}])
         # unique_segments = self.collection.find().distinct("segment_efforts.name")
         seg_and_id = {}
         i = 0
         for m in segment_name_and_id:
             if m["_id"].get("name") is not None:
-                for name_and_id in zip(m["_id"]["name"], m["_id"]["id"]):
-                    if seg_and_id.get(name_and_id[0].strip()) is None:
-                        seg_and_id[name_and_id[0].strip()] = name_and_id[1]
+                for name_id_dist_avg_grade in zip(m["_id"]["name"], m["_id"]["id"], m["_id"]["distance"],
+                                                  m["_id"]["average_grade"]):
+                    if seg_and_id.get(name_id_dist_avg_grade[0].strip()) is None:
+                        seg_and_id[name_id_dist_avg_grade[0].strip()] = (
+                            name_id_dist_avg_grade[1], name_id_dist_avg_grade[2], name_id_dist_avg_grade[3])
         return seg_and_id
 
     def get_recorded_time_for_a_segment(self, segment_id):
@@ -170,7 +177,6 @@ class MongoAccess:
                         segment_effort_by_day[date] = o
                     elif segment_effort_by_day[date]["elapsed_time"] > o["elapsed_time"]:
                         segment_effort_by_day[date] = o
-        print(segment_effort_by_day)
         for key in segment_effort_by_day:
             array.append(segment_effort_by_day[key])
         return array
