@@ -29,7 +29,7 @@ def build_batch_summary_activities(strava_activities: List[Dict]) -> List[Dict]:
 
 def build_details_activity_to_update(activity: {}) -> {}:
     current_doc = {}
-    for k in ['description']:
+    for k in ['total_elevation_gain', 'calories', 'description']:
         if activity.get(k) is not None:
             current_doc[k] = activity[k]
         # add logging if key not found
@@ -68,7 +68,13 @@ def build_details_activity_to_update(activity: {}) -> {}:
                                                                         "average_grade": seg.get('segment').get(
                                                                             'average_grade'),
                                                                         "distance": seg.get('segment').get(
-                                                                            'distance')}
+                                                                            'distance'),
+                                                                        "city": seg.get('segment').get(
+                                                                            'city'),
+                                                                        "state": seg.get('segment').get(
+                                                                            'state'),
+                                                                        "country": seg.get('segment').get(
+                                                                            'country')}
     # add logging if key not found
 
     return current_doc

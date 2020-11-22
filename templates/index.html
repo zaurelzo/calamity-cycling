@@ -53,8 +53,17 @@
 
 <div class="container" id="segment-info">
     <div class="row">
+
+        <select class="btn-mini" id="select-segments-region" data-live-search="true" onchange="filterSegmentByRegions()">
+            <option selected>All regions</option>
+        </select>
+
+        <select class="btn-mini" id="select-segments-city" data-live-search="true" onchange="sortSegments()">
+            <option selected>All cities</option>
+        </select>
+
         <select class="btn-mini" id="segements-order" onchange="sortSegments()">
-            <option selected>Select sorting segments criteria</option>
+            <option selected>Order segments by</option>
             <option>Ascending average grade</option>
             <option>Descending average grade</option>
             <option>Ascending distance</option>
@@ -62,7 +71,7 @@
             <option>Ascending segment name</option>
             <option>Descending segment name</option>
         </select>
-        <select class="btn-mini" id="select-segments-info" data-live-search="true">
+        <select class="btn-mini" id="select-segments-name" data-live-search="true">
             <option selected>Open to select a segment</option>
         </select>
 
@@ -77,8 +86,6 @@
     var years_and_months = {{ y_and_m|tojson }}
     var monthly_distance  = {{monthy_dist|tojson }}
     var segments = {{segs|tojson }}
-
-
 
 
 </script>

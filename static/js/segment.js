@@ -84,12 +84,32 @@ function buildAverageSpeedForAGivenSegment(averageSpeedData) {
 
 }
 
+function selectElementsFromSegments(segs,tupleIndex){
+    var cities = {};
+    for (property in segs){
+        city = segs[property][tupleIndex];
+        if (city!=null && !cities.hasOwnProperty(city)){
+            cities[city]=true;
+        }
+    }
+    return cities;
+}
+
+
 //build the dropdown menu to show the available segment name
-var select_segments_button  = document.querySelector("#select-segments-info");
 //function from average_speed.js
-createOptionElement(select_segments_button,Object.keys(segments));
+createOptionElement(document.querySelector("#select-segments-name"),Object.keys(segments));
 
 buildAverageSpeedForAGivenSegment([]);
+
+//build the dropdown menu to show the available city Name
+createOptionElement(document.querySelector("#select-segments-city"),
+                    Object.keys( selectElementsFromSegments(segments,3)).sort());
+
+//build the dropdown menu to show the available region
+createOptionElement(document.querySelector("#select-segments-region"),
+                    Object.keys( selectElementsFromSegments(segments,4)).sort());
+
 
 // update the average speed of a segment when clicking on th retrieve button
 (function() {
@@ -104,7 +124,7 @@ buildAverageSpeedForAGivenSegment([]);
       return false;
     }
     httpRequest.onreadystatechange = showSegmentsInfo;
-    var e = document.querySelector("#select-segments-info");
+    var e = document.querySelector("#select-segments-name");
     var seg = e.options[e.selectedIndex].text;
     if (seg !=="Open to select a segment" ){
         var seg_id_dist_grade = segments[seg]
@@ -131,18 +151,51 @@ buildAverageSpeedForAGivenSegment([]);
 })();
 
 
+function filterSegmentByRegions() {
+    var selectorRegions =document.querySelector("#select-segments-region");
+    var region = selectorRegions.options[selectorRegions.selectedIndex].text;
+    //filter by region
+    var segmentsByRegions = {};
+     if (region==="All regions"){
+        segmentsByRegions=segments;
+    }else {
+        for (var seg in segments) {
+            if (segments[seg][4]===region){
+                segmentsByRegions[seg] = segments[seg];
+            }
+        }
+    }
+    //show available city by regions.
+    document.querySelector("#select-segments-city").options.length = 1;
+    createOptionElement(document.querySelector("#select-segments-city"),
+                    Object.keys( selectElementsFromSegments(segmentsByRegions,3)).sort());
+}
+
 //sort segments
 function sortSegments() {
+    var selectorCity =document.querySelector("#select-segments-city");
+    var city = selectorCity.options[selectorCity.selectedIndex].text;
+     //filter by city
+     var segmentsByCity = {};
+    if (city==="All cities"){
+        segmentsByCity=segments;
+    }else {
+        for (var seg in segments) {
+            if (segments[seg][3]===city){
+                segmentsByCity[seg] = segments[seg];
+            }
+        }
+    }
 
-    var e = document.querySelector("#segements-order");
-    var criteria = e.options[e.selectedIndex].text;
     var sortable = [];
     var keysSorted = {};
-    console.log(segments);
-    for (var seg in segments) {
+    for (var seg in segmentsByCity) {
         //segment name, id, distance, average grade
         sortable.push([seg,segments[seg][0], segments[seg][1],segments[seg][2]]);
     }
+    //sort segments according to the selected criteria
+    var e = document.querySelector("#segements-order");
+    var criteria = e.options[e.selectedIndex].text;
     switch(criteria) {
         case 'Ascending average grade' :
             sortable.sort(function(a, b) { return a[3] - b[3];});
@@ -200,18 +253,10 @@ function sortSegments() {
             keysSorted = segments;
             break;
     }
-    console.log(keysSorted);
-    document.querySelector("#select-segments-info").options.length = 1;
+    document.querySelector("#select-segments-name").options.length = 1;
     //build the dropdown menu to show the available segment name
-    var select_segments_button  = document.querySelector("#select-segments-info");
+    var select_segments_button  = document.querySelector("#select-segments-name");
     //function from average_speed.js
     createOptionElement(select_segments_button,Object.keys(keysSorted));
-//    if (years_and_months.hasOwnProperty(value)){
-//        let select_month_button  = document.querySelector("#select-month");
-//        createOptionElement(select_month_button,years_and_months[value])
-//    }else {
-//        //keep the first option
-//    	document.querySelector("#select-month").options.length = 1;
-//    }
 }
 

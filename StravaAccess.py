@@ -137,6 +137,6 @@ class StravaAccess:
         if r.headers.get('X-RateLimit-Limit') is not None:
             X_RateLimit_Limit = r.headers.get('X-RateLimit-Limit')
         if r.status_code < 200 or r.status_code > 300:
+            print("Cannot get details activities ", r.content)
             return {"error": r.content}, X_RateLimit_Usage, X_RateLimit_Limit
         return json.loads(r.content), X_RateLimit_Usage, X_RateLimit_Limit
-

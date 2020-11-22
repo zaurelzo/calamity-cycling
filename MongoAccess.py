@@ -140,22 +140,25 @@ class MongoAccess:
         return res
 
     # TODO : use unique segment id  instead of segment name
-    def get_all_segments(self) -> List:
+    def get_all_segments(self) -> Dict:
         segment_name_and_id = self.collection.aggregate(
             [{"$group": {"_id": {"name": "$segment_efforts.name", "id": "$segment_efforts.segment.id",
                                  "distance": "$segment_efforts.segment.distance",
-                                 "average_grade": "$segment_efforts.segment.average_grade"}}}])
-        # unique_segments = self.collection.find().distinct("segment_efforts.name")
-        seg_and_id = {}
+                                 "average_grade": "$segment_efforts.segment.average_grade",
+                                 "city": "$segment_efforts.segment.city",
+                                 "state": "$segment_efforts.segment.state"}}}])
+        segments_info = {}
         i = 0
         for m in segment_name_and_id:
             if m["_id"].get("name") is not None:
+                # print(m)
                 for name_id_dist_avg_grade in zip(m["_id"]["name"], m["_id"]["id"], m["_id"]["distance"],
-                                                  m["_id"]["average_grade"]):
-                    if seg_and_id.get(name_id_dist_avg_grade[0].strip()) is None:
-                        seg_and_id[name_id_dist_avg_grade[0].strip()] = (
-                            name_id_dist_avg_grade[1], name_id_dist_avg_grade[2], name_id_dist_avg_grade[3])
-        return seg_and_id
+                                                  m["_id"]["average_grade"], m["_id"]["city"], m["_id"]["state"]):
+                    if segments_info.get(name_id_dist_avg_grade[0].strip()) is None:
+                        segments_info[name_id_dist_avg_grade[0].strip()] = (
+                            name_id_dist_avg_grade[1], name_id_dist_avg_grade[2], name_id_dist_avg_grade[3],
+                            name_id_dist_avg_grade[4], name_id_dist_avg_grade[5])
+        return segments_info
 
     def get_recorded_time_for_a_segment(self, segment_id):
         match = self.collection.find({"segment_efforts.segment.id": segment_id}).sort(

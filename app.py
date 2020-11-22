@@ -24,24 +24,26 @@ def refresh():
     # time_after = time.mktime(
     #     datetime.strptime(last_date_downloaded_activity, "%Y-%m-%d").timetuple())
     activities = strava.get_summary_activities(page_number=1, after=last_date_downloaded_activity)
-    # print(activities)
+    # reach api usage limit
+    if len(activities) == 1 and (activities[0].get("error") is not None):
+        return activities[0]
+
     li = Utils.build_batch_summary_activities(activities)
-    # print(li)
     mongo.insert_activities_to_mongo(li)
     ids_to_get_details = mongo.get_ids_activities_to_update_from_mongo()
-    # print(len(ids_to_get_details))
     print("retrieving " + str(len(ids_to_get_details)) + " activities")
     for doc_with_id in ids_to_get_details:
         print("Get detailled activity for " + str(doc_with_id))
-        # TODO : stop this loop if we reach api usage limit
         detail, _, _ = strava.get_details_activity(activity_id=str(doc_with_id["id"]))
-        details_activity = Utils.build_details_activiget_all_segmentsty_to_update(detail)
-        print(details_activity)
+        # reach api usage limit
+        if detail.get("error") is not None:
+            return detail
+        details_activity = Utils.build_details_activity_to_update(detail)
         if details_activity is not {}:
             mongo.update_activity_into_mongo(doc_with_id, details_activity)
             print("update activity " + str(doc_with_id))
         print("done for activity " + str(doc_with_id))
-    return "done"
+    return {"status": "success"}
 
 
 @app.route('/distance_by_month/<int:year>')
