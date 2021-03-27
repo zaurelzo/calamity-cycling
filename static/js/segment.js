@@ -99,7 +99,7 @@ function selectElementsFromSegments(segs,tupleIndex){
 //build the dropdown menu to show the available segment name
 //function from average_speed.js
 createOptionElement(document.querySelector("#select-segments-name"),Object.keys(segments));
-
+// empty average speed graph
 buildAverageSpeedForAGivenSegment([]);
 
 //build the dropdown menu to show the available city Name
