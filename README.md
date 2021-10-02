@@ -44,15 +44,17 @@ http://www.strava.com/oauth/authorize?client_id={client_id}&response_type=code&r
 
 * Run the below command to start the app
 ```
-# Suppose that you have install mongodb  
-sudo service mongod restart
-source venv/bin/activate
-FLASK_APP=app.py flask run 
+# Suppose that you have docker installed 
+docker build . -t calamity-cycling-app
+docker run --name cycling-app --rm -p 5000:5000 -it calamity-cycling-app
+go to http://localhost:5000 on your browser 
 ```
 
 # TODO
+* you've to started packaging calamity app into docker. Check how to pass CLIENT_ID env variable from docker run. automate 
+the process of getting user credentials in order to automatically create the .env file. 
 * show segment info when clicking on a graph point 
 * create a graph for monthly elevation and burned calories
 * add a section to show top 10 segments (name, dist, avg grade, number of time you've passed through)
 * add the refresh button
-* package the app into a docker image 
+ 
