@@ -1,11 +1,14 @@
-# syntax=docker/dockerfile:1
+FROM python:3.10-slim
 
-FROM mongo:5.0.3
-LABEL maintainer=zaurelzo
+WORKDIR /home/app
 
-RUN apt-get update && apt-get install -y python3.8  python3-pip  python3.8-venv
-WORKDIR /home
+RUN apt-get update && apt-get install -y bash
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
-CMD ["bash", "-x" ,"launch.sh"]
+
+EXPOSE 5000
+
+CMD ["bash", "launch.sh"]

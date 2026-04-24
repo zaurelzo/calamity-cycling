@@ -1,5 +1,9 @@
-.env
+*.env*
 .idea/
 venv
 activity.json
 __pycache__/
+.dockerignore
+.git
+.gitignore
+.idea
