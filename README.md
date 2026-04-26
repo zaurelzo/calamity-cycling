@@ -1,84 +1,120 @@
-# DESCRIPTION
+# Calamity Cycling
 
-Calamity-Cycling is a Flask application that analyzes my cycling activities. Using the `refresh` endpoint, it downloads all my activities from my Strava account and stores them in MongoDB.
-The app uses D3.js to draw graphs. Multiple pieces of information are available:
+A Flask application that analyzes your cycling activities from Strava and visualizes them with D3.js.
 
-* Fastest activity  
-* Longest activity  
-* Total distance  
+## Features
 
-![Alt text](demo-pictures/global-info.png?raw=true "img0")
+- **Fastest activity** — top speed, distance, date
+- **Longest activity** — max distance, average speed, date
+- **Total distance** — cumulative km across all rides
+- **Average speed** — filterable by month and year
+- **Monthly distance** — bar chart per year
+- **Segment stats** — average speed per activity day for any segment
 
-* Average speed for a given month/year  
-
-![Alt text](demo-pictures/average-speed-for-a-given-year-month.png?raw=true "img0")
-
-* Graph of monthly distance for a given year  
-
-![Alt text](demo-pictures/monthly-distance.png?raw=true "img0")
-
-* Graph of average speed by activity day for a given segment  
-
-![Alt text](demo-pictures/stat-for-a-given-segment.png?raw=true "img0")
+![Global info](demo-pictures/global-info.png)
+![Average speed](demo-pictures/average-speed-for-a-given-year-month.png)
+![Monthly distance](demo-pictures/monthly-distance.png)
+![Segment stats](demo-pictures/stat-for-a-given-segment.png)
 
 ---
 
-# RUNNING THE APP LOCALLY
+## Prerequisites
 
-* You must create a file named `.env` in the repository project containing the following variables:
-
-```
-CLIENT_ID=client_id_of_your_app_created_in_strava
-CLIENT_SECRET=client_secret_app_retrieve_from_strava
-READ_AUTHORIZATION_CODE=below_how_to_retrieve_the_read_authorization_code
-WRITE_AUTHORIZATION_CODE=below_how_to_retrieve_the_write_authorization_code
-```
-
-**Warning:** The `.env` file must end with an empty line (`\n`).
+- [Docker](https://docs.docker.com/get-docker/) and Docker Compose
+- A [Strava account](https://www.strava.com) with an API application created at https://www.strava.com/settings/api
 
 ---
 
-* Retrieve read authorization code
+## Setup
 
-Paste the link below into your browser. Don't forget to replace `client_id` with the ID of your app created in Strava.  
-Authenticate and authorize the app with the required permissions.
+### 1. Create a Strava API application
 
-http://www.strava.com/oauth/authorize?client_id={client_id}&response_type=code&redirect_uri=http://localhost/exchange_token&approval_prompt=force&scope=profile:read_all,activity:read_all
+Go to https://www.strava.com/settings/api and create an app. Note your **Client ID** and **Client Secret**.
 
-You will be redirected to a non-working page. Extract the `authorization_code` from this page URL:
-
-http://localhost/exchange_token?state=&code={authorization_code}&scope=read,activity:read_all,profile:read_all
+Set the **Authorization Callback Domain** to `localhost`.
 
 ---
 
-* Retrieve write authorization code
+### 2. Create the `.env` file
 
-Same procedure as the read authorization code, but use the link below:
+Create a file named `.env` at the root of the project:
 
-http://www.strava.com/oauth/authorize?client_id={client_id}&response_type=code&redirect_uri=http://localhost/exchange_token&approval_prompt=force&scope=profile:write,activity:write
-
----
-
-* Run the command below to start the app:
-
+```env
+CLIENT_ID=your_strava_client_id
+CLIENT_SECRET=your_strava_client_secret
 ```
 
-# Assuming you have Docker installed
-# enable venv 
+> ⚠️ The `.env` file must end with a newline character.
+
+---
+
+### 3. Start the app
+
+```bash
 docker compose up --build
 ```
-# Then go to:
-[http://localhost:5000](http://localhost:5000)
 
+Then open your browser at:
 
+```
+http://localhost:5000
+```
 
 ---
 
-# TODO
+## Usage
 
-* You need to start packaging the Calamity app into Docker. Check how to pass the `CLIENT_ID` environment variable via `docker run`. Automate the process of obtaining user credentials in order to automatically create the `.env` file.  
+### Connect Strava
 
-* Show segment info when clicking on a graph point  
-* Create a graph for monthly elevation and burned calories  
-* Add a section showing top 10 segments (name, distance, average grade, number of times passed through)  
-* Add a refresh button  
+On the home page, click **"Connect with Strava"**. You will be redirected to Strava to authorize the app. After authorizing, you'll be sent back to the app automatically.
+
+### Download your activities
+
+Click the **"Refresh"** button in the top bar. The app will:
+
+1. Fetch all new activities since the last download
+2. Store them in MongoDB
+3. Fetch detailed data (segments, calories, gear) for each activity
+4. Reload the dashboard automatically
+
+Progress logs are printed in the Docker console:
+
+```
+[2026-04-24 21:32:00] INFO - === Refresh started ===
+[2026-04-24 21:32:00] INFO - Last activity in DB: 2021-11-03 09:14:22
+[2026-04-24 21:32:01] INFO - Fetched 12 new activities from Strava
+[2026-04-24 21:32:01] INFO - Found 12 activities missing details, fetching...
+[2026-04-24 21:32:02] INFO -   [1/12] Fetching details for activity 6142837291
+[2026-04-24 21:32:02] INFO -   -> 'Morning Ride' | 42.3 km | 2021-10-01T07:30:00Z
+...
+[2026-04-24 21:32:15] INFO - === Refresh complete ===
+```
+
+---
+
+## Project structure
+
+```
+calamity-cycling/
+├── app.py               # Flask routes
+├── MongoAccess.py       # MongoDB queries
+├── StravaAccess.py      # Strava API client
+├── Utils.py             # Data transformation helpers
+├── templates/
+│   └── index.html       # Main UI
+├── static/
+│   ├── css/
+│   └── js/              # D3.js charts
+├── docker-compose.yml
+├── Dockerfile
+└── .env                 # ← you create this
+```
+
+---
+
+## TODO
+
+- [ ] Automate token exchange to remove need for manual `.env` setup
+- [ ] Show segment detail when clicking a graph point
+- [ ] Monthly elevation and burned calories graphs
+- [ ] Top 10 segments table (name, distance, grade, number of passes)

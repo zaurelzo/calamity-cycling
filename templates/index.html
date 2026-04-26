@@ -2,108 +2,549 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Calamity cycling</title>
+    <title>Calamity Cycling</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <meta name="viewport" content="width = device-width, initial-scale = 1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --black: #0a0a0a;
+            --white: #f5f0e8;
+            --orange: #ff5c1a;
+            --gray: #1a1a1a;
+            --gray-mid: #2e2e2e;
+            --gray-light: #555;
+            --card-bg: #131313;
+            --border: #2a2a2a;
+            --font-display: 'Bebas Neue', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--black);
+            color: var(--white);
+            font-family: var(--font-body);
+            font-weight: 300;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* CONNECT SCREEN */
+        #connect-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #connect-screen::before {
+            content: 'CALAMITY';
+            position: absolute;
+            font-family: var(--font-display);
+            font-size: clamp(120px, 20vw, 280px);
+            color: transparent;
+            -webkit-text-stroke: 1px #1e1e1e;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .connect-inner { position: relative; text-align: center; padding: 2rem; }
+
+        .connect-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-12px); }
+        }
+
+        .connect-title {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 10vw, 7rem);
+            letter-spacing: 0.04em;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .connect-title span { color: var(--orange); }
+
+        .connect-sub {
+            color: var(--gray-light);
+            font-size: 1rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 3rem;
+        }
+
+        .btn-strava {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--orange);
+            color: var(--black);
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 0.9rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            text-decoration: none;
+            padding: 1rem 2.5rem;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+            clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+        }
+
+        .btn-strava:hover {
+            background: var(--white);
+            color: var(--black);
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+        /* DASHBOARD */
+        #dashboard { display: none; }
+
+        .top-bar {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(10,10,10,0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .top-bar-brand { font-family: var(--font-display); font-size: 1.8rem; letter-spacing: 0.06em; }
+        .top-bar-brand span { color: var(--orange); }
+
+        .top-bar-right { display: flex; align-items: center; gap: 1rem; }
+
+        #refresh-status { font-size: 0.8rem; color: var(--gray-light); letter-spacing: 0.05em; }
+
+        .btn-refresh {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: transparent; border: 1px solid var(--orange); color: var(--orange);
+            font-family: var(--font-body); font-size: 0.8rem; font-weight: 500;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 0.5rem 1.25rem; cursor: pointer; transition: all 0.2s;
+        }
+
+        .btn-refresh:hover:not(:disabled) { background: var(--orange); color: var(--black); }
+        .btn-refresh:disabled { opacity: 0.4; cursor: not-allowed; }
+        .refresh-spinner { display: inline-block; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .dash-wrapper { max-width: 1400px; margin: 0 auto; padding: 2.5rem 2rem; }
+
+        .section-label {
+            font-family: var(--font-display); font-size: 0.75rem;
+            letter-spacing: 0.25em; text-transform: uppercase; color: var(--orange);
+            margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;
+        }
+
+        .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1px; background: var(--border); margin-bottom: 3rem; border: 1px solid var(--border);
+        }
+
+        .stat-card { background: var(--card-bg); padding: 1.75rem 2rem; position: relative; overflow: hidden; }
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+            background: var(--orange); opacity: 0; transition: opacity 0.2s;
+        }
+        .stat-card:hover::before { opacity: 1; }
+        .stat-label { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray-light); margin-bottom: 0.5rem; }
+        .stat-value { font-family: var(--font-display); font-size: 2.5rem; line-height: 1; }
+        .stat-unit  { font-size: 0.85rem; color: var(--gray-light); margin-top: 0.3rem; }
+
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 3rem; font-size: 0.875rem; }
+        .data-table caption {
+            font-family: var(--font-display); font-size: 0.75rem;
+            letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange);
+            text-align: left; padding: 0 0 0.75rem; caption-side: top;
+        }
+        .data-table th {
+            font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase;
+            color: var(--gray-light); padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border); font-weight: 400; text-align: left;
+        }
+        .data-table td { padding: 0.8rem 1rem; border-bottom: 1px solid #1a1a1a; }
+        .data-table tr:hover td { background: #161616; }
+
+        .controls-row {
+            display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+            margin-bottom: 1.5rem; padding: 1.5rem;
+            background: var(--card-bg); border: 1px solid var(--border);
+        }
+
+        .dash-select {
+            background: var(--gray); border: 1px solid var(--border); color: var(--white);
+            font-family: var(--font-body); font-size: 0.8rem;
+            padding: 0.5rem 2rem 0.5rem 1rem; appearance: none; -webkit-appearance: none;
+            cursor: pointer; min-width: 160px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23ff5c1a'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 0.75rem center;
+            transition: border-color 0.2s;
+        }
+        .dash-select:focus { outline: none; border-color: var(--orange); }
+
+        .btn-retrieve {
+            background: transparent; border: 1px solid var(--gray-mid); color: var(--white);
+            font-family: var(--font-body); font-size: 0.75rem; font-weight: 500;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            padding: 0.5rem 1.5rem; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-retrieve:hover { border-color: var(--orange); color: var(--orange); }
+
+        .viz-container {
+            background: var(--card-bg); border: 1px solid var(--border);
+            padding: 2rem; margin-bottom: 3rem; min-height: 240px;
+        }
+
+        .dash-divider { height: 1px; background: var(--border); margin: 3rem 0; }
+
+        /* SEGMENT SECTION */
+        .segment-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            margin-bottom: 3rem;
+            min-height: 500px;
+        }
+
+        .segment-sidebar {
+            background: var(--card-bg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .segment-filters {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .seg-search {
+            background: var(--gray);
+            border: 1px solid var(--border);
+            color: var(--white);
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .seg-search:focus { outline: none; border-color: var(--orange); }
+        .seg-search::placeholder { color: var(--gray-light); }
+
+        .seg-filter-row { display: flex; gap: 0.5rem; }
+        .seg-filter-row .dash-select { min-width: 0; flex: 1; font-size: 0.75rem; }
+
+        .segment-list {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 460px;
+        }
+
+        .segment-item {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid #1a1a1a;
+            cursor: pointer;
+            transition: background 0.15s;
+            position: relative;
+        }
+
+        .segment-item:hover { background: #1a1a1a; }
+
+        .segment-item.active {
+            background: #1a1a1a;
+            border-left: 3px solid var(--orange);
+            padding-left: calc(1rem - 3px);
+        }
+
+        .segment-item-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--white);
+            margin-bottom: 0.2rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .segment-item.active .segment-item-name { color: var(--orange); }
+
+        .segment-item-meta {
+            font-size: 0.7rem;
+            color: var(--gray-light);
+            letter-spacing: 0.05em;
+        }
+
+        .segment-main {
+            background: var(--card-bg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .segment-chart-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .segment-chart-header h3 {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            letter-spacing: 0.05em;
+            color: var(--white);
+            margin-bottom: 0.2rem;
+        }
+
+        #segment-chart-meta {
+            font-size: 0.75rem;
+            color: var(--gray-light);
+            letter-spacing: 0.08em;
+        }
+
+        #segment-chart {
+            flex: 1;
+            padding: 1.5rem;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .segment-placeholder {
+            text-align: center;
+            color: var(--gray-light);
+        }
+
+        .segment-placeholder-icon { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.4; }
+        .segment-placeholder-text { font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeUp 0.5s ease forwards; opacity: 0; }
+        .fade-up:nth-child(1) { animation-delay: 0.05s; }
+        .fade-up:nth-child(2) { animation-delay: 0.1s; }
+        .fade-up:nth-child(3) { animation-delay: 0.15s; }
+        .fade-up:nth-child(4) { animation-delay: 0.2s; }
+
+        @media (max-width: 900px) {
+            .segment-layout { grid-template-columns: 1fr; }
+            .segment-list { max-height: 260px; }
+        }
+
+        @media (max-width: 768px) {
+            .top-bar { padding: 0 1rem; }
+            .top-bar-brand { font-size: 1.4rem; }
+            .dash-wrapper { padding: 1.5rem 1rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .controls-row { flex-direction: column; align-items: stretch; }
+            .dash-select { min-width: 100%; }
+            #refresh-status { display: none; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 
 <body>
-<div class="container" id=" global-infos">
-    <p>Global information</p>
-    <table class="table table-striped" id="top_activity_speed">
-        <!-- data generate by the js  -->
-        <caption>Fastest activity information</caption>
-    </table>
 
-
-    <table class="table table-striped " id="top_distance">
-        <caption>Longest activity information</caption>
-    </table>
-    <div class="container"></div>
-
-    <table class="table table-striped " id="total_distance">
-        <!--        <caption>Total cycling distance</caption>-->
-    </table>
-</div>
-
-
-<!--average speed -->
-<div class="container" id="average_speed">
-    <div class="row">
-        <select class=" btn-mini" id="select-year" onchange="updateAvailableMonths()">
-            <option selected>All years</option>
-        </select>
-        <select class=" btn-mini" id="select-month">
-            <option selected>All months</option>
-        </select>
-        <button type="button" class=".btn-primary" id="retrieve-average-speed">retrieve</button>
+<!-- CONNECT SCREEN -->
+<div id="connect-screen">
+    <div class="connect-inner">
+        <div class="connect-icon">🚴</div>
+        <h1 class="connect-title">Calamity<br><span>Cycling</span></h1>
+        <p class="connect-sub">Your Strava data, beautifully visualized</p>
+        <a href="/connect_strava" class="btn-strava">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+            Connect with Strava
+        </a>
     </div>
 </div>
 
-<div class="container" id="monthly-distance">
-    <div class="row">
-        <select class=" btn-mini" id="select-year-monthly-dist">
-            <option selected>Open to select a year</option>
-        </select>
-        <button type="button" class=".btn-primary" id="retrieve-monthly-dist">retrieve</button>
+<!-- DASHBOARD -->
+<div id="dashboard">
+
+    <div class="top-bar">
+        <div class="top-bar-brand">Calamity <span>Cycling</span></div>
+        <div class="top-bar-right">
+            <span id="refresh-status"></span>
+            <button class="btn-refresh" id="refresh-btn" onclick="refreshData()">
+                <span id="refresh-icon">↻</span> Refresh
+            </button>
+        </div>
+    </div>
+
+    <div class="dash-wrapper">
+
+        <!-- Global stats -->
+        <div class="section-label fade-up">Global Stats</div>
+        <div class="stats-grid fade-up" id="stats-cards"></div>
+        <div class="fade-up">
+            <table class="data-table" id="top_activity_speed"><caption>Fastest Activity</caption></table>
+        </div>
+        <div class="fade-up">
+            <table class="data-table" id="top_distance"><caption>Longest Activity</caption></table>
+        </div>
+        <div class="fade-up">
+            <table class="data-table" id="total_distance"></table>
+        </div>
+
+        <div class="dash-divider"></div>
+
+        <!-- Average speed -->
+        <div class="section-label fade-up">Average Speed</div>
+        <div class="controls-row fade-up" id="average_speed">
+            <select class="dash-select" id="select-year" onchange="updateAvailableMonths()">
+                <option selected>All years</option>
+            </select>
+            <select class="dash-select" id="select-month">
+                <option selected>All months</option>
+            </select>
+            <button class="btn-retrieve" id="retrieve-average-speed">Retrieve</button>
+        </div>
+        <div class="viz-container fade-up" id="average-speed-chart"></div>
+
+        <div class="dash-divider"></div>
+
+        <!-- Monthly distance -->
+        <div class="section-label fade-up">Monthly Distance</div>
+        <div class="controls-row fade-up" id="monthly-distance">
+            <select class="dash-select" id="select-year-monthly-dist">
+                <option selected>Select a year</option>
+            </select>
+            <button class="btn-retrieve" id="retrieve-monthly-dist">Retrieve</button>
+        </div>
+        <div class="viz-container fade-up" id="monthly-distance-chart"></div>
+
+        <div class="dash-divider"></div>
+
+        <!-- Segments -->
+        <div class="section-label fade-up">Segments</div>
+        <div class="segment-layout fade-up">
+
+            <!-- Sidebar: filters + list -->
+            <div class="segment-sidebar">
+                <div class="segment-filters">
+                    <input type="text" class="seg-search" id="seg-search" placeholder="Search segments…">
+                    <div class="seg-filter-row">
+                        <select class="dash-select" id="seg-filter-region">
+                            <option selected>All regions</option>
+                        </select>
+                        <select class="dash-select" id="seg-filter-city">
+                            <option selected>All cities</option>
+                        </select>
+                    </div>
+                    <div class="seg-filter-row">
+                        <select class="dash-select" id="seg-filter-order" style="width:100%">
+                            <option selected>Default order</option>
+                            <option>Grade ↑</option>
+                            <option>Grade ↓</option>
+                            <option>Distance ↑</option>
+                            <option>Distance ↓</option>
+                            <option>Name A→Z</option>
+                            <option>Name Z→A</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="segment-list" id="segment-list"></div>
+            </div>
+
+            <!-- Main: chart -->
+            <div class="segment-main">
+                <div class="segment-chart-header">
+                    <h3 id="segment-chart-title">Select a segment</h3>
+                    <div id="segment-chart-meta">Click any segment on the left to see its speed history</div>
+                </div>
+                <div id="segment-chart">
+                    <div class="segment-placeholder">
+                        <div class="segment-placeholder-icon">📈</div>
+                        <div class="segment-placeholder-text">No segment selected</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
     </div>
 </div>
-
-
-<div class="container" id="segment-info">
-    <div class="row">
-
-        <select class="btn-mini" id="select-segments-region" data-live-search="true" onchange="filterSegmentByRegions()">
-            <option selected>All regions</option>
-        </select>
-
-        <select class="btn-mini" id="select-segments-city" data-live-search="true" onchange="sortSegments()">
-            <option selected>All cities</option>
-        </select>
-
-        <select class="btn-mini" id="segements-order" onchange="sortSegments()">
-            <option selected>Order segments by</option>
-            <option>Ascending average grade</option>
-            <option>Descending average grade</option>
-            <option>Ascending distance</option>
-            <option>Descending distance</option>
-            <option>Ascending segment name</option>
-            <option>Descending segment name</option>
-        </select>
-        <select class="btn-mini" id="select-segments-name" data-live-search="true">
-            <option selected>Open to select a segment</option>
-        </select>
-
-        <button type="button" class=".btn-primary" id="retrieve-segment-info">retrieve</button>
-    </div>
-</div>
-
 
 <script type="text/javascript">
     var average_speed_array = {{ datar|tojson }}
-    var global_information = {{ global_infos|tojson }}
-    var years_and_months = {{ y_and_m|tojson }}
-    var monthly_distance  = {{monthy_dist|tojson }}
-    var segments = {{segs|tojson }}
+    var global_information  = {{ global_infos|tojson }}
+    var years_and_months    = {{ y_and_m|tojson }}
+    var monthly_distance    = {{ monthy_dist|tojson }}
+    var segments            = {{ segs|tojson }}
 
+    if (average_speed_array && average_speed_array.length > 0) {
+        document.getElementById("connect-screen").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+    }
 
+    function refreshData() {
+        const btn    = document.getElementById("refresh-btn");
+        const icon   = document.getElementById("refresh-icon");
+        const status = document.getElementById("refresh-status");
+
+        btn.disabled = true;
+        icon.classList.add("refresh-spinner");
+        status.textContent = "Fetching from Strava…";
+
+        fetch("/refresh")
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === "success") {
+                    status.textContent = "✓ Done — reloading";
+                    setTimeout(() => location.reload(), 1000);
+                } else if (data.error === "not_connected") {
+                    status.textContent = "✕ Not connected — please connect Strava first";
+                    btn.disabled = false;
+                    icon.classList.remove("refresh-spinner");
+                } else {
+                    status.textContent = "✕ " + JSON.stringify(data);
+                    btn.disabled = false;
+                    icon.classList.remove("refresh-spinner");
+                }
+            })
+            .catch(() => {
+                status.textContent = "✕ Request failed";
+                btn.disabled = false;
+                icon.classList.remove("refresh-spinner");
+            });
+    }
 </script>
 
-<!-- bootstrap need jquery-->
 <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap/bootstrap.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/d3/d3.js') }}"></script>
-
-<!-- Include our script that will make our bar chart. -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/average_speed.js') }}"></script>
-<!-- show global info -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/global-infos.js') }}"></script>
-
 <script type="text/javascript" src="{{ url_for('static', filename='js/monthly-distance.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/segment.js') }}"></script>
-
 
 </body>
 </html>

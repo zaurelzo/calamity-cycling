@@ -1,262 +1,292 @@
-function buildAverageSpeedForAGivenSegment(averageSpeedData) {
-    var margin = {top: 20, right: 30, bottom: 30, left: 60};
-    var width = document.getElementById('average_speed').clientWidth - margin.left - margin.right;
-    var  height = document.getElementById('average_speed').clientWidth/3.236 - margin.top - margin.bottom;
+// -------------------------------------------------------
+// STATE
+// -------------------------------------------------------
+var filteredSegments = Object.assign({}, segments);
+var selectedSegmentName = null;
+
+// -------------------------------------------------------
+// CHART
+// -------------------------------------------------------
+function buildSegmentChart(data, segmentName, segmentMeta) {
+    d3.select("#segment-chart").select("svg").remove();
+    d3.select("#segment-chart").select(".segment-empty").remove();
+
+    if (!data || data.length === 0) {
+        d3.select("#segment-chart")
+            .append("div")
+            .attr("class", "segment-empty")
+            .style("display", "flex")
+            .style("align-items", "center")
+            .style("justify-content", "center")
+            .style("height", "200px")
+            .style("color", "#555")
+            .style("font-size", "0.85rem")
+            .style("letter-spacing", "0.1em")
+            .text("No data found for this segment");
+        return;
+    }
+
+    var container = document.getElementById("segment-chart");
+    var margin = {top: 30, right: 30, bottom: 50, left: 60};
+    var width  = container.offsetWidth - margin.left - margin.right;
+    var height = Math.max(200, container.offsetWidth / 3.5) - margin.top - margin.bottom;
 
     const parseTime = d3.timeParse("%Y-%m-%d");
-    const dateFormat = d3.timeFormat("%Y-%m-%d");
 
-    const x = d3.scaleTime()
-        .range([0, width]);
+    data.forEach(d => { d.date = parseTime(d.date); });
 
-    const y = d3.scaleLinear()
-        .range([height, 0]);
+    const x = d3.scaleTime().range([0, width])
+        .domain(d3.extent(data, d => d.date));
+    const y = d3.scaleLinear().range([height, 0])
+        .domain([d3.min(data, d => d.speed) * 0.95, d3.max(data, d => d.speed) * 1.05]);
 
-             // define the line
-             var line = d3.line()
-                .x(function(d) { return x(d.date); })
-                .y(function(d) {  return y(d.speed); });
+    var line = d3.line()
+        .x(d => x(d.date))
+        .y(d => y(d.speed))
+        .curve(d3.curveMonotoneX);
 
-
-    const svg = d3.select("#segment-info").append("svg")
-        .attr("id", "svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+    const svg = d3.select("#segment-chart").append("svg")
+        .attr("width",  width  + margin.left + margin.right)
+        .attr("height", height + margin.top  + margin.bottom)
         .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Grid lines
+    svg.append("g")
+        .attr("class", "grid")
+        .call(d3.axisLeft(y).tickSize(-width).tickFormat(""))
+        .selectAll("line")
+        .style("stroke", "#2a2a2a")
+        .style("stroke-dasharray", "3,3");
+
+    svg.select(".grid .domain").remove();
+
+    // Axes
+    svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x).ticks(6))
+        .selectAll("text, line, path")
+        .style("stroke", "#555")
+        .style("fill", "#555");
+
+    svg.append("g")
+        .call(d3.axisLeft(y))
+        .selectAll("text, line, path")
+        .style("stroke", "#555")
+        .style("fill", "#555");
+
+    svg.append("text")
+        .attr("fill", "#555")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -45)
+        .attr("x", -height / 2)
+        .style("text-anchor", "middle")
+        .style("font-size", "0.7rem")
+        .style("letter-spacing", "0.1em")
+        .text("km/h");
+
+    // Area fill
+    var area = d3.area()
+        .x(d => x(d.date))
+        .y0(height)
+        .y1(d => y(d.speed))
+        .curve(d3.curveMonotoneX);
+
+    svg.append("path")
+        .datum(data)
+        .attr("fill", "rgba(255, 92, 26, 0.08)")
+        .attr("d", area);
+
+    // Line
+    svg.append("path")
+        .datum(data)
+        .attr("fill", "none")
+        .attr("stroke", "#ff5c1a")
+        .attr("stroke-width", 2)
+        .attr("d", line);
+
+    // Dots
+    svg.selectAll(".dot")
+        .data(data)
+        .enter().append("circle")
+        .attr("class", "dot")
+        .attr("cx", d => x(d.date))
+        .attr("cy", d => y(d.speed))
+        .attr("r", 4)
+        .attr("fill", "#ff5c1a")
+        .attr("stroke", "#0a0a0a")
+        .attr("stroke-width", 2)
+        .on("mouseover", function(d) {
+            d3.select(this).attr("r", 6);
+            tooltip.style("opacity", 1)
+                .html(`<strong>${d3.timeFormat("%d %b %Y")(d.date)}</strong><br/>${d.speed} km/h`);
+        })
+        .on("mousemove", function() {
+            tooltip
+                .style("left",  (d3.event.pageX + 12) + "px")
+                .style("top",   (d3.event.pageY - 28) + "px");
+        })
+        .on("mouseout", function() {
+            d3.select(this).attr("r", 4);
+            tooltip.style("opacity", 0);
+        });
+}
+
+// Tooltip
+var tooltip = d3.select("body").append("div")
+    .style("position", "absolute")
+    .style("background", "#1a1a1a")
+    .style("border", "1px solid #2a2a2a")
+    .style("color", "#f5f0e8")
+    .style("padding", "8px 12px")
+    .style("font-size", "0.75rem")
+    .style("pointer-events", "none")
+    .style("opacity", 0)
+    .style("border-radius", "2px");
 
 
-        // Conversion des données du fichier, parsing des dates et '+' pour expliciter une valeur numérique.
-        averageSpeedData.forEach(function(d) {
-            d.date = parseTime(d.date);
-           // d.speed = d.speed
+// -------------------------------------------------------
+// SEGMENT LIST
+// -------------------------------------------------------
+function buildSegmentList(segs) {
+    var list = document.getElementById("segment-list");
+    list.innerHTML = "";
+
+    var keys = Object.keys(segs);
+
+    if (keys.length === 0) {
+        list.innerHTML = '<div style="padding:1rem;color:#555;font-size:0.8rem;letter-spacing:0.1em;">No segments found</div>';
+        return;
+    }
+
+    keys.forEach(function(name) {
+        var meta    = segs[name];
+        var dist    = meta.distance ? (meta.distance / 1000).toFixed(1) + " km" : "—";
+        var grade   = meta.avg_grade != null ? meta.avg_grade + "%" : "—";
+        var city    = meta.city || "—";
+
+        var item = document.createElement("div");
+        item.className = "segment-item" + (name === selectedSegmentName ? " active" : "");
+        item.dataset.name = name;
+        item.innerHTML = `
+            <div class="segment-item-name">${name}</div>
+            <div class="segment-item-meta">${city} &nbsp;·&nbsp; ${dist} &nbsp;·&nbsp; ${grade} avg grade</div>
+        `;
+
+        item.addEventListener("click", function() {
+            document.querySelectorAll(".segment-item").forEach(el => el.classList.remove("active"));
+            item.classList.add("active");
+            selectedSegmentName = name;
+            loadSegmentChart(meta.id, name, meta);
         });
 
-        // Contrairement au tutoriel Bar Chart, plutôt que de prendre un range entre 0 et le max on demande
-        // directement à D3JS de nous donner le min et le max avec la fonction 'd3.extent', pour la date comme
-        // pour le cours de fermeture (close).
-        x.domain(d3.extent(averageSpeedData, d => d.date));
-        y.domain(d3.extent(averageSpeedData, d => d.speed));
-
-        // Ajout de l'axe X
-        svg.append("g")
-            .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(x));
-
-        // Ajout de l'axe Y et du texte associé pour la légende
-        svg.append("g")
-            .call(d3.axisLeft(y))
-            .append("text")
-                .attr("fill", "#000")
-                .attr("transform", "rotate(-90)")
-                .attr("y", 6)
-                .attr("dy", "0.71em")
-                .style("text-anchor", "end")
-                .text("km/h");
-
-
-        svg.append('defs')
-        .append('marker')
-        .attr('id', 'dot')
-        .attr('viewBox', [0, 0, 20, 20])
-        .attr('refX', 10)
-        .attr('refY', 10)
-        .attr('markerWidth', 5)
-        .attr('markerHeight', 5)
-        .append('circle')
-        .attr('cx', 10)
-        .attr('cy', 10)
-        .attr('r', 10)
-        .style('fill', 'green');
-
-
-        // Ajout d'un path calculé par la fonction line à partir des données de notre fichier.
-        svg.append("path")
-            .datum(averageSpeedData)
-            .attr("class", "line")
-            .attr("d", line)
-            .attr("fill", "none")
-            .attr("stroke", "blue")
-            .attr("stroke-width", 2)
-            .attr('marker-start', 'url(#dot)')
-        .attr('marker-mid', 'url(#dot)')
-        .attr('marker-end', 'url(#dot)');
-
+        list.appendChild(item);
+    });
 }
 
-function selectElementsFromSegments(segs,tupleIndex){
-    var cities = {};
-    for (property in segs){
-        city = segs[property][tupleIndex];
-        if (city!=null && !cities.hasOwnProperty(city)){
-            cities[city]=true;
+function loadSegmentChart(segmentId, name, meta) {
+    var chart = document.getElementById("segment-chart");
+    chart.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:200px;color:#555;font-size:0.8rem;letter-spacing:0.1em;">Loading…</div>';
+
+    document.getElementById("segment-chart-title").textContent = name;
+    var dist  = meta.distance ? (meta.distance / 1000).toFixed(1) + " km" : "";
+    var grade = meta.avg_grade != null ? meta.avg_grade + "% avg grade" : "";
+    document.getElementById("segment-chart-meta").textContent = [dist, grade].filter(Boolean).join("  ·  ");
+
+    fetch("get_recorded_time_for_a_segment/" + segmentId)
+        .then(r => r.json())
+        .then(json => {
+            chart.innerHTML = "";
+            buildSegmentChart(json.data, name, meta);
+        })
+        .catch(() => {
+            chart.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:200px;color:#555;">Error loading data</div>';
+        });
+}
+
+
+// -------------------------------------------------------
+// FILTERS
+// -------------------------------------------------------
+function getUniqueValues(segs, key) {
+    var vals = {};
+    for (var name in segs) {
+        var v = segs[name][key];
+        if (v) vals[v] = true;
+    }
+    return Object.keys(vals).sort();
+}
+
+function populateSelect(id, values, placeholder) {
+    var el = document.getElementById(id);
+    el.innerHTML = '<option selected>' + placeholder + '</option>';
+    values.forEach(function(v) {
+        var opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        el.appendChild(opt);
+    });
+}
+
+function applyFilters() {
+    var region = document.getElementById("seg-filter-region").value;
+    var city   = document.getElementById("seg-filter-city").value;
+    var order  = document.getElementById("seg-filter-order").value;
+
+    var result = {};
+    for (var name in segments) {
+        var s = segments[name];
+        if (region && region !== "All regions" && s.state !== region) continue;
+        if (city   && city   !== "All cities"  && s.city  !== city)   continue;
+        result[name] = s;
+    }
+
+    // Sort
+    var entries = Object.entries(result);
+    switch (order) {
+        case "Grade ↑":   entries.sort((a,b) => (a[1].avg_grade||0) - (b[1].avg_grade||0)); break;
+        case "Grade ↓":   entries.sort((a,b) => (b[1].avg_grade||0) - (a[1].avg_grade||0)); break;
+        case "Distance ↑":entries.sort((a,b) => (a[1].distance||0)  - (b[1].distance||0));  break;
+        case "Distance ↓":entries.sort((a,b) => (b[1].distance||0)  - (a[1].distance||0));  break;
+        case "Name A→Z":  entries.sort((a,b) => a[0].localeCompare(b[0]));                  break;
+        case "Name Z→A":  entries.sort((a,b) => b[0].localeCompare(a[0]));                  break;
+    }
+
+    filteredSegments = Object.fromEntries(entries);
+    buildSegmentList(filteredSegments);
+}
+
+// Region change → update city options
+document.getElementById("seg-filter-region").addEventListener("change", function() {
+    var region = this.value;
+    var citiesInRegion = {};
+    for (var name in segments) {
+        if (region === "All regions" || segments[name].state === region) {
+            var c = segments[name].city;
+            if (c) citiesInRegion[c] = true;
         }
     }
-    return cities;
-}
+    populateSelect("seg-filter-city", Object.keys(citiesInRegion).sort(), "All cities");
+    applyFilters();
+});
 
+document.getElementById("seg-filter-city").addEventListener("change", applyFilters);
+document.getElementById("seg-filter-order").addEventListener("change", applyFilters);
 
-//build the dropdown menu to show the available segment name
-//function from average_speed.js
-createOptionElement(document.querySelector("#select-segments-name"),Object.keys(segments));
-// empty average speed graph
-buildAverageSpeedForAGivenSegment([]);
-
-//build the dropdown menu to show the available city Name
-createOptionElement(document.querySelector("#select-segments-city"),
-                    Object.keys( selectElementsFromSegments(segments,3)).sort());
-
-//build the dropdown menu to show the available region
-createOptionElement(document.querySelector("#select-segments-region"),
-                    Object.keys( selectElementsFromSegments(segments,4)).sort());
-
-
-// update the average speed of a segment when clicking on th retrieve button
-(function() {
-  var httpRequest;
-  document.getElementById("retrieve-segment-info").addEventListener('click', makeRequest);
-
-  function makeRequest() {
-    httpRequest = new XMLHttpRequest();
-
-    if (!httpRequest) {
-      alert('Abandon :( Impossible de créer une instance de XMLHTTP');
-      return false;
+// Search
+document.getElementById("seg-search").addEventListener("input", function() {
+    var q = this.value.toLowerCase();
+    var result = {};
+    for (var name in filteredSegments) {
+        if (name.toLowerCase().includes(q)) result[name] = filteredSegments[name];
     }
-    httpRequest.onreadystatechange = showSegmentsInfo;
-    var e = document.querySelector("#select-segments-name");
-    var seg = e.options[e.selectedIndex].text;
-    if (seg !=="Open to select a segment" ){
-        var seg_id_dist_grade = segments[seg]
-        console.log("get_recorded_time_for_a_segment/"+seg_id_dist_grade[0]);
-        httpRequest.open('GET',"get_recorded_time_for_a_segment/"+seg_id_dist_grade[0] );
-        httpRequest.send();
-    }else {
-        return false;
-    }
-
-  }
-
-  function showSegmentsInfo() {
-    if (httpRequest.readyState === XMLHttpRequest.DONE) {
-      if (httpRequest.status === 200) {
-        var asJson = JSON.parse(httpRequest.responseText);
-        d3.select("#segment-info").select("svg").remove();
-        buildAverageSpeedForAGivenSegment(asJson["segments"]);
-      } else {
-        alert('Il y a eu un problème avec la requête.');
-      }
-    }
-  }
-})();
+    buildSegmentList(result);
+});
 
 
-function filterSegmentByRegions() {
-    var selectorRegions =document.querySelector("#select-segments-region");
-    var region = selectorRegions.options[selectorRegions.selectedIndex].text;
-    //filter by region
-    var segmentsByRegions = {};
-     if (region==="All regions"){
-        segmentsByRegions=segments;
-    }else {
-        for (var seg in segments) {
-            if (segments[seg][4]===region){
-                segmentsByRegions[seg] = segments[seg];
-            }
-        }
-    }
-    //show available city by regions.
-    document.querySelector("#select-segments-city").options.length = 1;
-    createOptionElement(document.querySelector("#select-segments-city"),
-                    Object.keys( selectElementsFromSegments(segmentsByRegions,3)).sort());
-}
-
-//sort segments
-function sortSegments() {
-    var selectorCity =document.querySelector("#select-segments-city");
-    var city = selectorCity.options[selectorCity.selectedIndex].text;
-     //filter by city
-     var segmentsByCity = {};
-    if (city==="All cities"){
-        segmentsByCity=segments;
-    }else {
-        for (var seg in segments) {
-            if (segments[seg][3]===city){
-                segmentsByCity[seg] = segments[seg];
-            }
-        }
-    }
-
-    var sortable = [];
-    var keysSorted = {};
-    for (var seg in segmentsByCity) {
-        //segment name, id, distance, average grade
-        sortable.push([seg,segments[seg][0], segments[seg][1],segments[seg][2]]);
-    }
-    //sort segments according to the selected criteria
-    var e = document.querySelector("#segements-order");
-    var criteria = e.options[e.selectedIndex].text;
-    switch(criteria) {
-        case 'Ascending average grade' :
-            sortable.sort(function(a, b) { return a[3] - b[3];});
-             for (var id in sortable) {
-                keysSorted[sortable[id][0]]=sortable[id][3];
-             }
-            break;
-        case 'Descending average grade' :
-            sortable.sort(function(a, b) { return b[3] - a[3];});
-            for (var id in sortable) {
-                keysSorted[sortable[id][0]]=sortable[id][3];
-             }
-            break;
-        case 'Ascending distance' :
-            sortable.sort(function(a, b) { return a[2] - b[2];});
-            for (var id in sortable) {
-                keysSorted[sortable[id][0]]=sortable[id][2];
-             }
-            break;
-        case 'Descending distance' :
-            sortable.sort(function(a, b) { return b[2] - a[2];});
-            for (var id in sortable) {
-                keysSorted[sortable[id][0]]=sortable[id][2];
-             }
-            break;
-        case 'Ascending segment name':
-            sortable.sort(function(a, b) {
-            if (b > a) {
-                 return -1;
-            }
-             if (a > b) {
-                 return 1;
-              }
-              return 0;}
-            );
-            for (var id in sortable) {
-                keysSorted[sortable[id][0]]=sortable[id][0];
-             }
-            break;
-        case 'Descending segment name':
-            sortable.sort(function(a, b) {
-            if (a > b) {
-                 return -1;
-            }
-             if (b > a) {
-                 return 1;
-              }
-              return 0;}
-            );
-            for (var id in sortable) {
-                keysSorted[sortable[id][0]]=sortable[id][0];
-             }
-            break;
-        default:
-            keysSorted = segments;
-            break;
-    }
-    document.querySelector("#select-segments-name").options.length = 1;
-    //build the dropdown menu to show the available segment name
-    var select_segments_button  = document.querySelector("#select-segments-name");
-    //function from average_speed.js
-    createOptionElement(select_segments_button,Object.keys(keysSorted));
-}
-
+// -------------------------------------------------------
+// INIT
+// -------------------------------------------------------
+populateSelect("seg-filter-region", getUniqueValues(segments, "state"), "All regions");
+populateSelect("seg-filter-city",   getUniqueValues(segments, "city"),  "All cities");
+buildSegmentList(segments);

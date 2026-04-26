@@ -46,7 +46,7 @@ class MongoAccess:
         )
 
     # -----------------------------
-    # ✅ FIXED: D3 SAFE OUTPUT
+    # AVERAGE SPEED
     # -----------------------------
     def get_average_speed_from_mongo(self, year=None, month=None):
         date_filter = {"$lte": datetime.today()}
@@ -77,12 +77,9 @@ class MongoAccess:
         result = []
 
         for doc in cursor:
-            # ✅ IMPORTANT FIX: convert datetime → string
             date_obj = doc.get("start_date_local")
-
             if not date_obj:
                 continue
-
             result.append({
                 "speed": round(doc["average_speed"] * 3.6, 2),
                 "date": date_obj.strftime("%Y-%m-%d")
@@ -139,7 +136,7 @@ class MongoAccess:
             {
                 "$project": {
                     "month": {"$month": "$start_date_local"},
-                    "year": {"$year": "$start_date_local"},
+                    "year":  {"$year":  "$start_date_local"},
                     "distance": 1
                 }
             },
@@ -171,12 +168,12 @@ class MongoAccess:
             {
                 "$group": {
                     "_id": {
-                        "name": "$segment_efforts.name",
-                        "id": "$segment_efforts.segment.id",
-                        "distance": "$segment_efforts.segment.distance",
+                        "name":      "$segment_efforts.name",
+                        "id":        "$segment_efforts.segment.id",
+                        "distance":  "$segment_efforts.segment.distance",
                         "avg_grade": "$segment_efforts.segment.average_grade",
-                        "city": "$segment_efforts.segment.city",
-                        "state": "$segment_efforts.segment.state"
+                        "city":      "$segment_efforts.segment.city",
+                        "state":     "$segment_efforts.segment.state"
                     }
                 }
             }
@@ -197,14 +194,43 @@ class MongoAccess:
                 doc["_id"]["state"],
             ):
                 name = entry[0].strip()
-
                 if name not in segments:
                     segments[name] = {
-                        "id": entry[1],
-                        "distance": entry[2],
+                        "id":        entry[1],
+                        "distance":  entry[2],
                         "avg_grade": entry[3],
-                        "city": entry[4],
-                        "state": entry[5]
+                        "city":      entry[4],
+                        "state":     entry[5]
                     }
 
         return segments
+
+    # -----------------------------
+    # SEGMENT SPEED HISTORY
+    # -----------------------------
+    def get_recorded_time_for_a_segment(self, segment_id):
+        segment_id = int(segment_id)
+
+        cursor = self.collection.find(
+            {"segment_efforts": {"$exists": True}},
+            {"_id": 0, "start_date_local": 1, "segment_efforts": 1}
+        )
+
+        result = []
+
+        for activity in cursor:
+            date = activity.get("start_date_local")
+            if not date:
+                continue
+
+            for effort in activity.get("segment_efforts", []):
+                seg = effort.get("segment", {})
+                if seg.get("id") == segment_id:
+                    speed = effort.get("average_speed")
+                    if speed:
+                        result.append({
+                            "date":  date.strftime("%Y-%m-%d"),
+                            "speed": round(speed * 3.6, 2)
+                        })
+
+        return sorted(result, key=lambda x: x["date"])
